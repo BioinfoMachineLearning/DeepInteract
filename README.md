@@ -428,6 +428,7 @@ rm final_raw_casp_capri.tar.gz final_processed_casp_capri.tar.gz
 Navigate to the project directory and run the training script with the parameters desired:
 
  ```bash
+# Hint: Run `python3 lit_model_train.py --help` to see all available CLI arguments
 cd project
 python3 lit_model_train.py --lr 1e-3 --weight_decay 1e-2
 cd ..
@@ -452,6 +453,7 @@ Navigate to the project directory and run the prediction script
 with the filenames of the left and right PDB chains.
 
  ```bash
+ # Hint: Run `python3 lit_model_predict.py --help` to see all available CLI arguments
 cd project
 python3 lit_model_predict.py --left_pdb_filepath "$DI_DIR"/project/test_data/4heq_l_u.pdb --right_pdb_filepath "$DI_DIR"/project/test_data/4heq_r_u.pdb --ckpt_dir "$DI_DIR"/project/checkpoints --ckpt_name LitGINI-GeoTran-DilResNet.ckpt --hhsuite_db ~/Data/Databases/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt
 cd ..
