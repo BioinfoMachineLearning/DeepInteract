@@ -156,7 +156,6 @@ project/artifacts/
 
 # TensorBoard
 tb_logs/
-tb_logs_archived/
 
 # Checkpoints
 checkpoints
