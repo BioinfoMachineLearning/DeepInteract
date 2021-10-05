@@ -1,2 +1,2 @@
 # DeepInteract
-Deep geometric learning for predicting protein interface contacts
+A geometric deep learning pipeline for predicting protein interface contacts.
