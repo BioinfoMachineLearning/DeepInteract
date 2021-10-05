@@ -280,7 +280,7 @@ if __name__ == '__main__':
     args.profiler = args.profiler_method
     args.accelerator = 'dp'  # Predict using Data Parallel (DP) and not Distributed Data Parallel (DDP) to avoid errors
     args.auto_select_gpus = args.auto_choose_gpus
-    args.gpus = 1  # Enforce predictions to take place on a single GPU
+    args.gpus = args.num_gpus  # Allow user to choose how many GPUs to use for inference
     args.num_nodes = 1  # Enforce predictions to to take place on a single node
     args.precision = args.gpu_precision
     args.accumulate_grad_batches = args.accum_grad_batches
