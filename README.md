@@ -267,7 +267,7 @@ Now that we know Docker is functioning properly, we can begin building our Docke
     For example, for the DIPS-Plus test target with the PDB ID: 4HEQ:
 
     ```bash
-    python3 docker/run_docker.py --left_pdb_filepath "$DI_DIR"/project/test_data/4heq_l_u.pdb --right_pdb_filepath "$DI_DIR"/project/test_data/4heq_r_u.pdb --input_dataset_dir "$DI_DIR"/project/datasets/Input --ckpt_name "$DI_DIR"/project/checkpoints/LitGINI-GeoTran-DilResNet.ckpt --hhsuite_db ~/Data/Databases/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt
+    python3 docker/run_docker.py --left_pdb_filepath "$DI_DIR"/project/test_data/4heq_l_u.pdb --right_pdb_filepath "$DI_DIR"/project/test_data/4heq_r_u.pdb --input_dataset_dir "$DI_DIR"/project/datasets/Input --ckpt_name "$DI_DIR"/project/checkpoints/LitGINI-GeoTran-DilResNet.ckpt --hhsuite_db ~/Data/Databases/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt --num_gpus 0
     ```
    
     This script will generate and (as NumPy array files - e.g., test_data/4heq_contact_prob_map.npy)
@@ -277,18 +277,19 @@ Now that we know Docker is functioning properly, we can begin building our Docke
 7. Note that by using the default
 
     ```bash
-    num_gpus=0
+    --num_gpus 0
     ```
 
-    flag when executing the Docker container's run script, the Docker container will only 
-    make use of the system's available CPU(s) for prediction. However, by setting 
-    num_gpus to
+    flag when executing `run_docker.py`, the Docker container will only 
+    make use of the system's available CPU(s) for prediction. However,
+    by specifying
 
     ```bash
-    num_gpus=1
+    --num_gpus 1
     ```
    
-    the Docker container will then employ the first available GPU for prediction.
+    when executing `run_docker.py`, the Docker container will then
+    employ the first available GPU for prediction.
 
 ## Running DeepInteract via a Traditional Installation (for Linux-Based Operating Systems)
 

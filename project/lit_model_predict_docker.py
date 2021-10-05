@@ -25,7 +25,7 @@ flags.DEFINE_string('psaia_config', '/app/DeepInteract/project/datasets/builder/
                     'Path to input config file for PSAIA')
 flags.DEFINE_string('hhsuite_db', None, 'Path to downloaded and extracted HH-suite3-compatible database'
                                         ' (e.g., BFD or Uniclust30')
-flags.DEFINE_integer('num_gpus', 0, 'How many GPUs to use to make a prediction (num_gpus=0 means use CPU instead)')
+flags.DEFINE_integer('num_gpus', 0, 'How many GPUs to use to make a prediction (--num_gpus 0 means use CPU instead)')
 
 FLAGS = flags.FLAGS
 
