@@ -124,7 +124,7 @@ class MultiHeadGeometricAttentionLayer(nn.Module):
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------
-# Following code curated for DeepInteract (https://github.com/amorehead/DeepInteract):
+# Following code curated for DeepInteract (https://github.com/BioinfoMachineLearning/DeepInteract):
 # -------------------------------------------------------------------------------------------------------------------------------------
 
 class InitEdgeModule(nn.Module):

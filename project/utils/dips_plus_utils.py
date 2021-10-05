@@ -162,7 +162,7 @@ def get_hsacc(residues, similarity_matrix, raw_pdb_filename):
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------
-# Following code curated in DIPS-Plus (https://github.com/amorehead/DIPS-Plus):
+# Following code curated in DIPS-Plus (https://github.com/BioinfoMachineLearning/DIPS-Plus):
 # -------------------------------------------------------------------------------------------------------------------------------------
 
 def find_fasta_sequences_for_pdb_file(sequences: dict, pdb_filename: str, external_feats_dir: str,

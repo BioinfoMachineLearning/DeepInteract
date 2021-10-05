@@ -3,7 +3,7 @@ from Bio.PDB.PDBParser import PDBParser
 from Bio.PDB.Polypeptide import CaPPBuilder
 
 # -------------------------------------------------------------------------------------------------------------------------------------
-# Following code curated for DeepInteract (https://github.com/amorehead/DeepInteract):
+# Following code curated for DeepInteract (https://github.com/BioinfoMachineLearning/DeepInteract):
 # -------------------------------------------------------------------------------------------------------------------------------------
 
 # Dataset-global node count limits to restrict computational learning complexity

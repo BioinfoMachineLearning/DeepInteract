@@ -6,7 +6,7 @@ from project.utils.dips_plus_utils import collect_dataset_statistics, DEFAULT_DA
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------
-# Following code curated for DeepInteract (https://github.com/amorehead/DeepInteract):
+# Following code curated for DeepInteract (https://github.com/BioinfoMachineLearning/DeepInteract):
 # -------------------------------------------------------------------------------------------------------------------------------------
 
 

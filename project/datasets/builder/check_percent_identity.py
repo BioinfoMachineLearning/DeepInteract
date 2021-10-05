@@ -9,7 +9,7 @@ from project.utils.deepinteract_utils import check_percent_identity, construct_f
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------
-# Following code curated for DeepInteract (https://github.com/amorehead/DeepInteract):
+# Following code curated for DeepInteract (https://github.com/BioinfoMachineLearning/DeepInteract):
 # -------------------------------------------------------------------------------------------------------------------------------------
 
 

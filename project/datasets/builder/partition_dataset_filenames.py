@@ -13,7 +13,7 @@ from project.utils.deepinteract_constants import RESIDUE_COUNT_LIMIT, KNN, \
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------
-# Following code curated for DeepInteract (https://github.com/amorehead/DeepInteract):
+# Following code curated for DeepInteract (https://github.com/BioinfoMachineLearning/DeepInteract):
 # -------------------------------------------------------------------------------------------------------------------------------------
 
 

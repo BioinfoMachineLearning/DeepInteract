@@ -41,7 +41,7 @@ except ImportError:
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------
-# Following code curated for DeepInteract (https://github.com/amorehead/DeepInteract):
+# Following code curated for DeepInteract (https://github.com/BioinfoMachineLearning/DeepInteract):
 # -------------------------------------------------------------------------------------------------------------------------------------
 def glorot_orthogonal(tensor, scale):
     """Initialize a tensor's values according to an orthogonal Glorot initialization scheme."""

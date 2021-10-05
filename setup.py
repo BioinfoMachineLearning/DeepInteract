@@ -7,9 +7,9 @@ setup(
     version='1.0.0',
     description='A geometric deep learning pipeline for predicting protein interface contacts.',
     author='Alex Morehead',
-    author_email='alex.morehead@gmail.com',
+    author_email='acmwhb@umsystem.edu',
     license='GNU Public License, Version 3.0',
-    url='https://github.com/amorehead/DeepInteract',
+    url='https://github.com/BioinfoMachineLearning/DeepInteract',
     install_requires=[
         'setuptools==57.4.0',
         'atom3-py3==0.1.9.8',

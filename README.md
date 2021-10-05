@@ -229,7 +229,7 @@ Now that we know Docker is functioning properly, we can begin building our Docke
 1. Clone this repository and `cd` into it.
 
     ```bash
-    git clone https://github.com/amorehead/DeepInteract
+    git clone https://github.com/BioinfoMachineLearning/DeepInteract
     cd DeepInteract/
     DI_DIR=$(pwd)
     ```
@@ -281,7 +281,7 @@ First, install and configure Conda environment:
 
 ```bash
 # Clone this repository:
-git clone https://github.com/amorehead/DeepInteract
+git clone https://github.com/BioinfoMachineLearning/DeepInteract
 
 # Change to project directory:
 cd DeepInteract
@@ -372,7 +372,8 @@ To train, retrain, or cross-validate DeepInteract models using DIPS-Plus and/or 
 
 ```bash
 # Download and extract preprocessed DGLGraphs for DIPS-Plus and CASP-CAPRI
-# Requires 7GB of free space
+# Requires ~55GB of free space
+mkdir -p project/datasets/DIPS/final
 cd project/datasets/DIPS/final
 
 # Download DIPS-Plus
@@ -392,6 +393,7 @@ tar -xzf final_processed_dips.tar.gz
 rm final_processed_dips.tar.gz.parta* final_raw_dips.tar.gz final_processed_dips.tar.gz
 
 # Download CASP-CAPRI
+mkdir -p ../../CASP_CAPRI/final
 cd ../../CASP_CAPRI/final
 wget https://zenodo.org/record/5546775/files/final_raw_casp_capri.tar.gz
 wget https://zenodo.org/record/5546775/files/final_processed_casp_capri.tar.gz
@@ -401,6 +403,16 @@ tar -xzf final_raw_casp_capri.tar.gz
 tar -xzf final_processed_casp_capri.tar.gz
 rm final_raw_casp_capri.tar.gz final_processed_casp_capri.tar.gz
 ```
+
+Navigate to the project directory and run the training script with the parameters desired:
+
+ ```bash
+cd project
+python3 lit_model_train.py --lr 1e-3 --weight_decay 1e-2
+cd ..
+```
+
+## Inference
 
 ### Download trained model checkpoint
 
@@ -413,15 +425,6 @@ mkdir -p project/checkpoints
 wget -P project/checkpoints https://zenodo.org/record/5546775/files/LitGINI-GeoTran-DilResNet.ckpt
 ```
 
-Navigate to the project directory and run the training script with the parameters desired:
-
- ```bash
-cd project
-python3 lit_model_train.py --lr 1e-3 --weight_decay --1e-2
-cd ..
-```
-
-## Inference
 ### Predict interface contact probability maps
 
 Navigate to the project directory and run the prediction script

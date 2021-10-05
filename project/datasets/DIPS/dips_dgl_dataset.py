@@ -12,7 +12,7 @@ from project.utils.deepinteract_utils \
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------
-# Following code curated for DeepInteract (https://github.com/amorehead/DeepInteract):
+# Following code curated for DeepInteract (https://github.com/BioinfoMachineLearning/DeepInteract):
 # -------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -272,6 +272,11 @@ class DIPSDGLDataset(DGLDataset):
     @property
     def num_chains(self) -> int:
         """Number of protein chains in each complex."""
+        return 2
+
+    @property
+    def num_classes(self) -> int:
+        """Number of possible classes for each inter-chain residue pair in each complex."""
         return 2
 
     @property

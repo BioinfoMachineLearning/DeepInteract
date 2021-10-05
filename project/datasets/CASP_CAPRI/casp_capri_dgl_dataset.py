@@ -257,6 +257,11 @@ class CASPCAPRIDGLDataset(DGLDataset):
         return 2
 
     @property
+    def num_classes(self) -> int:
+        """Number of possible classes for each inter-chain residue pair in each complex."""
+        return 2
+
+    @property
     def num_node_features(self) -> int:
         """Number of node feature values after encoding them."""
         return 113
