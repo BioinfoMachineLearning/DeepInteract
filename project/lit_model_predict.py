@@ -148,7 +148,6 @@ def main(args):
     # -----------
     # Input
     # -----------
-    logging.info(f'Generating features for {args.left_pdb_filepath} and {args.right_pdb_filepath}')
     input_dataset = InputDataset(left_pdb_filepath=args.left_pdb_filepath,
                                  right_pdb_filepath=args.right_pdb_filepath,
                                  input_dataset_dir=args.input_dataset_dir,
