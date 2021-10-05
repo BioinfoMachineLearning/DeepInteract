@@ -380,6 +380,11 @@ cd "$MY_LOCAL"/PSAIA_1.0_source/bin/linux
 ./psa/psa
 ```
 
+**Finally, substitute your absolute filepath for DeepInteract**
+(i.e., where on your local storage device you downloaded the
+repository to) **anywhere DeepInteract's local repository is
+referenced in `project/datasets/builder/psaia_config_file_input.txt`.**
+
 ## Training
 
 ### Download training and cross-validation DGLGraphs
