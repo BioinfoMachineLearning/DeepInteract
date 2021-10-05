@@ -998,7 +998,7 @@ def collect_args():
     parser.add_argument('--max_hours', type=int, default=1, help='Maximum number of hours to allot for training')
     parser.add_argument('--max_minutes', type=int, default=55, help='Maximum number of minutes to allot for training')
     parser.add_argument('--multi_gpu_backend', type=str, default='ddp', help='Multi-GPU backend for training')
-    parser.add_argument('--num_gpus', type=int, default=6, help='Number of GPUs to use (e.g. -1 = all available GPUs)')
+    parser.add_argument('--num_gpus', type=int, default=1, help='Number of GPUs to use (e.g. -1 = all available GPUs)')
     parser.add_argument('--auto_choose_gpus', action='store_true', dest='auto_choose_gpus', help='Auto-select GPUs')
     parser.add_argument('--num_compute_nodes', type=int, default=1, help='Number of compute nodes to use')
     parser.add_argument('--gpu_precision', type=int, default=32, help='Bit size used during training (e.g. 16-bit)')
