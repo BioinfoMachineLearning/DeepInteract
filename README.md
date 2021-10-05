@@ -272,8 +272,23 @@ Now that we know Docker is functioning properly, we can begin building our Docke
    
     This script will generate and (as NumPy array files - e.g., test_data/4heq_contact_prob_map.npy)
     save to the given input directory the predicted interface contact map as well as the Geometric
-    Transformer's learned node and edge representations for both chain graphs. (By default, the script
-    also only uses the available CPU(s) for prediction via the default num_gpus=0 flag.)
+    Transformer's learned node and edge representations for both chain graphs.
+
+7. Note that by using the default
+
+    ```bash
+    num_gpus=0
+    ```
+
+    flag when executing the Docker container's run script, the Docker container will only 
+    make use of the system's available CPU(s) for prediction. However, by setting 
+    num_gpus to
+
+    ```bash
+    num_gpus=1
+    ```
+   
+    the Docker container will then employ the first available GPU for prediction.
 
 ## Running DeepInteract via a Traditional Installation (for Linux-Based Operating Systems)
 
