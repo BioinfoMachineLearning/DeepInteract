@@ -2,7 +2,6 @@ import os
 from argparse import ArgumentParser
 from math import sqrt
 
-import atom3.case as ca
 import dgl
 import dgl.function as fn
 import numpy as np
@@ -12,7 +11,6 @@ import torch
 import torch.nn as nn
 import torchmetrics as tm
 import wandb
-from dgl.nn.pytorch import GATConv
 from dgl.nn.pytorch import GraphConv
 from torch.nn import functional as F
 from torch.optim import AdamW
@@ -1535,7 +1533,6 @@ class LitGINI(pl.LightningModule):
 
         # Set up GNN node and edge embedding layers (if requested)
         self.using_gcn = self.gnn_layer_type.lower() == 'gcn'
-        self.using_gat = self.gnn_layer_type.lower() == 'gat'
         self.using_node_embedding = self.num_node_input_feats != self.num_gnn_hidden_channels
         self.node_in_embedding = nn.Linear(self.num_node_input_feats, self.num_gnn_hidden_channels, bias=False) \
             if self.using_node_embedding \
@@ -1586,16 +1583,6 @@ class LitGINI(pl.LightningModule):
                                     weight=True,
                                     activation=None,
                                     allow_zero_in_degree=False) for _ in range(self.num_gnn_layers)]
-        elif self.using_gat:
-            gnn_layers = [GATConv(in_feats=num_node_input_feats,
-                                  out_feats=num_node_input_feats,
-                                  num_heads=self.num_gnn_attention_heads,
-                                  feat_drop=0.1,
-                                  attn_drop=0.1,
-                                  negative_slope=0.2,
-                                  residual=False,
-                                  activation=None,
-                                  allow_zero_in_degree=False) for _ in range(self.num_gnn_layers)]
         else:  # Default to using a Geometric Transformer for learning node representations
             if self.num_gnn_layers > 0:
                 gnn_layers = [DGLGeometricTransformer(node_count_limit=self.max_num_graph_nodes,
@@ -1664,17 +1651,6 @@ class LitGINI(pl.LightningModule):
                 # Cache the original batch number of nodes and edges
                 batch_num_nodes, batch_num_edges = graph.batch_num_nodes(), graph.batch_num_edges()
                 graph.ndata['f'] = layer(graph, graph.ndata['f'], edge_weight=graph.edata['f'][:, 1]).squeeze()
-                # Retain the original batch number of nodes and edges
-                graph.set_batch_num_nodes(batch_num_nodes), graph.set_batch_num_edges(batch_num_edges)
-        elif self.using_gat:
-            # Forward propagate with each GNN layer
-            for layer in self.gnn_module:
-                # Cache the original batch number of nodes and edges
-                batch_num_nodes, batch_num_edges = graph.batch_num_nodes(), graph.batch_num_edges()
-                if self.num_gnn_attention_heads > 1:
-                    graph.ndata['f'] = torch.sum(layer(graph, graph.ndata['f']), dim=1)  # Sum the attention heads
-                else:
-                    graph.ndata['f'] = layer(graph, graph.ndata['f']).squeeze()
                 # Retain the original batch number of nodes and edges
                 graph.set_batch_num_nodes(batch_num_nodes), graph.set_batch_num_edges(batch_num_edges)
         else:  # The GeometricTransformer updates simply by returning a graph containing the updated node/edge feats
@@ -2209,14 +2185,16 @@ class LitGINI(pl.LightningModule):
         # -----------------
         parser.add_argument('--gnn_layer_type', type=str, default='geotran',
                             help='Which type of GNN layer to use'
-                                 ' (i.e. gat for DGLGATConv or geotran for DGLGeometricTransformer)')
+                                 ' (i.e., gcn for GraphConv,'
+                                 ' geotran w/ --disable_geometric_mode for DGLGraphTransformer,'
+                                 ' or geotran for DGLGeometricTransformer)')
         parser.add_argument('--num_gnn_hidden_channels', type=int, default=128,
                             help='Dimensionality of GNN filters (for nodes and edges alike after embedding)')
         parser.add_argument('--num_gnn_attention_heads', type=int, default=4,
                             help='How many multi-head GNN attention blocks to run in parallel')
         parser.add_argument('--interact_module_type', type=str, default='dil_resnet',
                             help='Which type of dense prediction interaction module to use'
-                                 ' (i.e. dil_resnet for Dilated ResNet, or deeplab for DeepLabV3Plus)')
+                                 ' (i.e. dil_resnet for ResNet2DInputWithOptAttention, or deeplab for DeepLabV3Plus)')
         parser.add_argument('--num_interact_hidden_channels', type=int, default=128,
                             help='Dimensionality of interaction module filters')
         parser.add_argument('--use_interact_attention', action='store_true', dest='use_interact_attention',
