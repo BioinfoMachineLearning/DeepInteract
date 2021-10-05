@@ -23,9 +23,10 @@ class DIPSDGLDataset(DGLDataset):
 
     - Train examples: 15,618
     - Val examples: 3,548
+    - Test examples: 32
     - Number of structures per complex: 2
     ----------------------
-    - Total examples: 19,166
+    - Total examples: 19,198
     ----------------------
 
     Parameters
@@ -66,9 +67,10 @@ class DIPSDGLDataset(DGLDataset):
     >>> # Get dataset
     >>> train_data = DIPSDGLDataset()
     >>> val_data = DIPSDGLDataset(mode='val')
+    >>> test_data = DIPSDGLDataset(mode='test')
     >>>
     >>> len(train_data)
-    33689
+    15618
     >>> train_data.num_chains
     2
     """
@@ -296,5 +298,5 @@ class DIPSDGLDataset(DGLDataset):
 
     @property
     def url(self) -> str:
-        """URL with which to download TAR archive of preprocessed pairs."""
-        return 'https://zenodo.org/record/4815267/files/final_raw_dips.tar.gz?download=1'
+        """URL with which to download TAR archive of preprocessed pairs (Need to manually download Part B)."""
+        return 'https://zenodo.org/record/5546775/files/final_processed_dips.tar.gz.partaa'
