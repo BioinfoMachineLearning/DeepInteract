@@ -264,13 +264,13 @@ Now that we know Docker is functioning properly, we can begin building our Docke
 
 6. Run `run_docker.py` pointing to two input PDB files containing the first and second chains
     of a complex for which you wish to predict the contact probability map.
-    For example, for the DIPS-Plus test target with the PDB ID: 4HEQ:
+    For example, for the DIPS-Plus test target with the PDB ID `4HEQ`:
 
     ```bash
     python3 docker/run_docker.py --left_pdb_filepath "$DI_DIR"/project/test_data/4heq_l_u.pdb --right_pdb_filepath "$DI_DIR"/project/test_data/4heq_r_u.pdb --input_dataset_dir "$DI_DIR"/project/datasets/Input --ckpt_name "$DI_DIR"/project/checkpoints/LitGINI-GeoTran-DilResNet.ckpt --hhsuite_db ~/Data/Databases/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt --num_gpus 0
     ```
    
-    This script will generate and (as NumPy array files - e.g., test_data/4heq_contact_prob_map.npy)
+    This script will generate and (as NumPy array files - e.g., `test_data/4heq_contact_prob_map.npy`)
     save to the given input directory the predicted interface contact map as well as the Geometric
     Transformer's learned node and edge representations for both chain graphs.
 
@@ -452,7 +452,7 @@ python3 lit_model_predict.py --left_pdb_filepath "$DI_DIR"/project/test_data/4he
 cd ..
 ```
 
-This script  will generate and (as NumPy array files - e.g., test_data/4heq_contact_prob_map.npy)
+This script  will generate and (as NumPy array files - e.g., `test_data/4heq_contact_prob_map.npy`)
 save to the given input directory the predicted interface contact map as well as the
 Geometric Transformer's learned node and edge representations for both chain graphs.
 
