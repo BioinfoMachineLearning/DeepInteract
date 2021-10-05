@@ -1,0 +1,14 @@
+# DeepInteract requirements
+setuptools==57.4.0
+atom3-py3==0.1.9.8
+click==8.0.1
+easy-parallel-py3==0.1.6.4
+dill==0.3.4
+tqdm==4.62.0
+Sphinx==4.0.1
+torchmetrics==0.5.1
+networkx==2.6.2
+timm==0.4.12
+wandb==0.12.2
+pytorch-lightning==1.4.8
+fairscale==0.4.0
