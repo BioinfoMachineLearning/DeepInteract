@@ -241,7 +241,7 @@ Now that we know Docker is functioning properly, we can begin building our Docke
     wget -P project/checkpoints https://zenodo.org/record/5546775/files/LitGINI-GeoTran-DilResNet.ckpt
     ```
 
-3. Build the Docker image (Warning: Requires 13GB of space):
+3. Build the Docker image (Warning: Requires ~13GB of Space):
 
     ```bash
     docker build -f docker/Dockerfile -t deepinteract .
@@ -255,8 +255,14 @@ Now that we know Docker is functioning properly, we can begin building our Docke
     ```bash
     pip3 install -r docker/requirements.txt
     ```
+   
+5. Create directory in which to generate input features and outputs:
 
-5. Run `run_docker.py` pointing to two input PDB files containing the first and second chains
+    ```bash
+    mkdir -p project/datasets/Input
+    ```
+
+6. Run `run_docker.py` pointing to two input PDB files containing the first and second chains
     of a complex for which you wish to predict the contact probability map.
     For example, for the DIPS-Plus test target with the PDB ID: 4HEQ:
 
@@ -266,7 +272,8 @@ Now that we know Docker is functioning properly, we can begin building our Docke
    
     This script will generate and (as NumPy array files - e.g., test_data/4heq_contact_prob_map.npy)
     save to the given input directory the predicted interface contact map as well as the Geometric
-    Transformer's learned node and edge representations for both chain graphs.
+    Transformer's learned node and edge representations for both chain graphs. (By default, the script
+    also only uses the available CPU(s) for prediction via the default num_gpus=0 flag.)
 
 ## Running DeepInteract via a Traditional Installation (for Linux-Based Operating Systems)
 
