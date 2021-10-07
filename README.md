@@ -6,9 +6,9 @@
 
 [<img src="https://twixes.gallerycdn.vsassets.io/extensions/twixes/pypi-assistant/1.0.3/1589834023190/Microsoft.VisualStudio.Services.Icons.Default" width="50"/>](https://pypi.org/project/DeepInteract/)
 
-![DeepInteract Architecture](./img/DeepInteract_Architecture.png)
+![DeepInteract Architecture](https://github.com/BioinfoMachineLearning/DeepInteract/blob/main/img/DeepInteract_Architecture.png)
 
-![Geometric Transformer](./img/Geometric_Transformer.png)
+![Geometric Transformer](https://github.com/BioinfoMachineLearning/DeepInteract/blob/main/img/Geometric_Transformer.png)
 
 </div>
 
