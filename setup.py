@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='DeepInteract',
-    version='1.0.0',
+    version='1.0.1',
     description='A geometric deep learning pipeline for predicting protein interface contacts.',
     author='Alex Morehead',
     author_email='acmwhb@umsystem.edu',
