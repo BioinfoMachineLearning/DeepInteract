@@ -39,7 +39,7 @@ The following step is required in order to run DeepInteract:
 
 This step requires `aria2c` to be installed on your machine.
 
-DeepInteract needs either (i.e., only one) of the following genetic (sequence) databases compatible with HH-suite3 to run:
+DeepInteract needs only one of the following genetic (sequence) databases compatible with HH-suite3 to run:
 
 * [BFD (Requires ~1.7TB of Space When Unextracted)](https://bfd.mmseqs.com/)
 * [Small BFD (Requires ~17GB of Space When Unextracted)](https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_non_consensus_sequences.fasta.gz)  
