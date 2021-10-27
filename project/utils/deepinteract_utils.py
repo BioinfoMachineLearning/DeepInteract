@@ -721,13 +721,27 @@ def convert_input_pdb_files_to_pair(left_pdb_filepath: str, right_pdb_filepath: 
                               pruned_dataset=os.path.join(input_dataset_dir, 'interim', 'parsed'),
                               hhsuite_db=hhsuite_db,
                               output_dir=os.path.join(input_dataset_dir, 'interim', 'external_feats'))
-    # Only a single pair file is produced in this case
-    pair_filepath = launch_postprocessing_of_pruned_pairs(
+    # Postprocess any pruned pairs that have not already been postprocessed
+    pair_filepaths = launch_postprocessing_of_pruned_pairs(
         raw_pdb_dir=os.path.join(input_dataset_dir, 'raw'),
         pruned_pairs_dir=os.path.join(input_dataset_dir, 'interim', 'pairs'),
         external_feats_dir=os.path.join(input_dataset_dir, 'interim', 'external_feats'),
         output_dir=os.path.join(input_dataset_dir, 'final', 'raw')
-    )[0]
+    )
+    if len(pair_filepaths) > 0:
+        # Retrieve the filepath of the single input pair produced in this case
+        pair_filepath = pair_filepaths[0]
+    else:
+        # Manually construct the already-postprocessed input pair's filepath since no pairs needed postprocessing
+        pruned_pairs_dir = os.path.join(input_dataset_dir, 'interim', 'pairs')
+        output_dir = os.path.join(input_dataset_dir, 'final', 'raw')
+        produced_filenames = db.get_structures_filenames(output_dir, extension='.dill')
+        produced_keys = [db.get_pdb_name(x) for x in produced_filenames if db.get_pdb_name(x) in left_pdb_filepath]
+        pdb_filename = [os.path.join(pruned_pairs_dir, db.get_pdb_code(key)[1:3], key)
+                        for key in produced_keys][0]
+        sub_dir = output_dir + '/' + db.get_pdb_code(pdb_filename)[1:3]
+        pair_filepath = sub_dir + '/' + db.get_pdb_name(pdb_filename)
+    # Impute any missing feature values in the postprocessed input pairs
     impute_missing_feature_values(output_dir=os.path.join(input_dataset_dir, 'final', 'raw'))
     # Load preprocessed pair
     with open(pair_filepath, 'rb') as f:
