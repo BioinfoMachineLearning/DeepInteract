@@ -736,7 +736,8 @@ def convert_input_pdb_files_to_pair(left_pdb_filepath: str, right_pdb_filepath: 
         pruned_pairs_dir = os.path.join(input_dataset_dir, 'interim', 'pairs')
         output_dir = os.path.join(input_dataset_dir, 'final', 'raw')
         produced_filenames = db.get_structures_filenames(output_dir, extension='.dill')
-        produced_keys = [db.get_pdb_name(x) for x in produced_filenames if db.get_pdb_name(x) in left_pdb_filepath]
+        produced_keys = [db.get_pdb_name(x) for x in produced_filenames
+                         if db.get_pdb_code(x) in db.get_pdb_code(left_pdb_filepath)]
         pdb_filename = [os.path.join(pruned_pairs_dir, db.get_pdb_code(key)[1:3], key)
                         for key in produced_keys][0]
         sub_dir = output_dir + '/' + db.get_pdb_code(pdb_filename)[1:3]
