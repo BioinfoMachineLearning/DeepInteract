@@ -733,15 +733,12 @@ def convert_input_pdb_files_to_pair(left_pdb_filepath: str, right_pdb_filepath: 
         pair_filepath = pair_filepaths[0]
     else:
         # Manually construct the already-postprocessed input pair's filepath since no pairs needed postprocessing
-        pruned_pairs_dir = os.path.join(input_dataset_dir, 'interim', 'pairs')
         output_dir = os.path.join(input_dataset_dir, 'final', 'raw')
         produced_filenames = db.get_structures_filenames(output_dir, extension='.dill')
         produced_keys = [db.get_pdb_name(x) for x in produced_filenames
-                         if db.get_pdb_code(x) in db.get_pdb_code(left_pdb_filepath)]
-        pdb_filename = [os.path.join(pruned_pairs_dir, db.get_pdb_code(key)[1:3], key)
-                        for key in produced_keys][0]
-        sub_dir = output_dir + '/' + db.get_pdb_code(pdb_filename)[1:3]
-        pair_filepath = sub_dir + '/' + db.get_pdb_name(pdb_filename)
+                         if db.get_pdb_code(x).upper() in db.get_pdb_code(left_pdb_filepath).upper()]
+        pair_filepath = [os.path.join(output_dir, db.get_pdb_code(key)[1:3], key)
+                         for key in produced_keys][0]
     # Impute any missing feature values in the postprocessed input pairs
     impute_missing_feature_values(output_dir=os.path.join(input_dataset_dir, 'final', 'raw'))
     # Load preprocessed pair
