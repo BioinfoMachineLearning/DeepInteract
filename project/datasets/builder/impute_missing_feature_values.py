@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 from parallel import submit_jobs
-from project.utils.dips_plus_utils import impute_missing_feature_values
+from project.utils.dips_plus_utils import impute_postprocessed_missing_feature_values
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ def main(output_dir: str, impute_atom_features: bool, advanced_logging: bool, nu
     inputs = [(pair_filename.as_posix(), pair_filename.as_posix(), impute_atom_features, advanced_logging)
               for pair_filename in Path(output_dir).rglob('*.dill')]
     # Without impute_atom_features set to True, non-CA atoms will be filtered out after writing updated pairs
-    submit_jobs(impute_missing_feature_values, inputs, num_cpus)
+    submit_jobs(impute_postprocessed_missing_feature_values, inputs, num_cpus)
 
 
 if __name__ == '__main__':
