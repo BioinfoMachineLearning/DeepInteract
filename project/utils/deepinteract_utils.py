@@ -30,7 +30,7 @@ from Bio.SeqRecord import SeqRecord
 from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 
 from project.utils.deepinteract_constants import FEAT_COLS, ALLOWABLE_FEATS, D3TO1
-from project.utils.dips_plus_utils import postprocess_pruned_pairs
+from project.utils.dips_plus_utils import postprocess_pruned_pairs, impute_postprocessed_missing_feature_values
 from project.utils.graph_utils import prot_df_to_dgl_graph_feats
 from project.utils.protein_feature_utils import GeometricProteinFeatures
 
@@ -573,9 +573,11 @@ def create_input_dir_struct(input_dataset_dir: str, pdb_code: str):
     _, _ = dir_struct_create_proc.communicate()  # Wait until the directory structure creation cmd is finished
 
 
-def copy_input_to_raw_dir(input_dataset_dir: str, pdb_filepath: str, pdb_code: str):
+def copy_input_to_raw_dir(input_dataset_dir: str, pdb_filepath: str, pdb_code: str, chain_indic: str):
     """Make a copy of the input PDB file in the newly-created raw directory."""
-    input_copy_cmd = f'cp {pdb_filepath} {os.path.join(input_dataset_dir, "raw", pdb_code)}'
+    filename = db.get_pdb_code(pdb_filepath) + f'_{chain_indic}.pdb' \
+        if chain_indic not in pdb_filepath else db.get_pdb_name(pdb_filepath)
+    input_copy_cmd = f'cp {pdb_filepath} {os.path.join(input_dataset_dir, "raw", pdb_code, filename)}'
     input_copy_proc = subprocess.Popen(input_copy_cmd.split(), stdout=subprocess.PIPE, cwd=os.getcwd())
     _, _ = input_copy_proc.communicate()  # Wait until the input copy cmd is finished
 
@@ -590,6 +592,7 @@ def make_dataset(input_dataset_dir='datasets/Input/raw', output_dir='datasets/In
     pa.parse_all(input_dataset_dir, parsed_dir, num_cpus)
 
     complexes_dill = os.path.join(output_dir, 'complexes/complexes.dill')
+    os.remove(complexes_dill)  # Ensure that pairs are made everytime this function is called
     comp.complexes(parsed_dir, complexes_dill, source_type)
     complexes = comp.read_complexes(complexes_dill)
     pairs_dir = os.path.join(output_dir, 'pairs')
@@ -697,7 +700,7 @@ def impute_missing_feature_values(output_dir='datasets/Input/final/raw',
     inputs = [(pair_filename.as_posix(), pair_filename.as_posix(), impute_atom_features, advanced_logging)
               for pair_filename in Path(output_dir).rglob('*.dill')]
     # Without impute_atom_features set to True, non-CA atoms will be filtered out after writing updated pairs
-    par.submit_jobs(impute_missing_feature_values, inputs, num_cpus)
+    par.submit_jobs(impute_postprocessed_missing_feature_values, inputs, num_cpus)
 
 
 def convert_input_pdb_files_to_pair(left_pdb_filepath: str, right_pdb_filepath: str, input_dataset_dir: str,
@@ -707,8 +710,8 @@ def convert_input_pdb_files_to_pair(left_pdb_filepath: str, right_pdb_filepath: 
     pdb_code = db.get_pdb_group(list(ca.get_complex_pdb_codes([left_pdb_filepath, right_pdb_filepath]))[0])
     # Iteratively execute the PDB file feature generation process
     create_input_dir_struct(input_dataset_dir, pdb_code)
-    copy_input_to_raw_dir(input_dataset_dir, left_pdb_filepath, pdb_code)
-    copy_input_to_raw_dir(input_dataset_dir, right_pdb_filepath, pdb_code)
+    copy_input_to_raw_dir(input_dataset_dir, left_pdb_filepath, pdb_code, 'l_u')
+    copy_input_to_raw_dir(input_dataset_dir, right_pdb_filepath, pdb_code, 'r_u')
     make_dataset(os.path.join(input_dataset_dir, 'raw'), os.path.join(input_dataset_dir, 'interim'))
     generate_psaia_features(psaia_dir=psaia_dir,
                             psaia_config=psaia_config,

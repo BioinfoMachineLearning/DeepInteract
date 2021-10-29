@@ -394,9 +394,10 @@ def __should_keep_postprocessed(raw_pdb_dir: str, pair_filename: str, source_typ
         # Identify if a given complex contains DSSP-derivable secondary structure features
         raw_pdb_filenames.append(get_raw_pdb_filename_from_interim_filename(interim_filename, raw_pdb_dir, source_type))
         pair_dssp_dict = get_dssp_dict_for_pdb_file(raw_pdb_filenames[i])
-        if not pair_dssp_dict and source_type not in ['input']:
+        if source_type.lower() not in ['input'] and not pair_dssp_dict:
             return pair, raw_pdb_filenames[i], False  # Discard pair missing DSSP-derivable secondary structure features
-        if pair.df0.shape[0] > ATOM_COUNT_LIMIT or pair.df1.shape[0] > ATOM_COUNT_LIMIT:
+        if source_type.lower() not in ['input'] \
+                and (pair.df0.shape[0] > ATOM_COUNT_LIMIT or pair.df1.shape[0] > ATOM_COUNT_LIMIT):
             return pair, raw_pdb_filenames[i], False  # Discard pair exceeding atom count limit to reduce comp. complex.
     return pair, raw_pdb_filenames, True
 
@@ -458,8 +459,8 @@ def postprocess_pruned_pair(raw_pdb_filenames: List[str], external_feats_dir: st
             rd_dict = get_msms_rd_dict_for_pdb_model(structure[0])  # RD only retrieved for first model
 
             # Get protrusion indices using PSAIA
-            psaia_filepath = os.path.relpath(os.path.splitext(os.path.split(raw_pdb_filename)[-1])[0])
-            psaia_filename = [path for path in Path(external_feats_dir).rglob(f'{psaia_filepath}*.tbl')][0]  # 1st path
+            pdb_code = db.get_pdb_code(raw_pdb_filename)
+            psaia_filename = [path for path in Path(external_feats_dir).rglob(f'{pdb_code}*.tbl')][0]  # 1st path
             psaia_df = get_df_from_psaia_tbl_file(psaia_filename)
 
             # Extract half-sphere exposure (HSE) statistics for each PDB model (including HSAAC and CN values)
@@ -836,8 +837,8 @@ def determine_nan_fill_value(column: pd.Series, imputation_method='median'):
     return imputation_value if column.isna().sum().sum() <= NUM_ALLOWABLE_NANS else 0
 
 
-def impute_missing_feature_values(input_pair_filename: str, output_pair_filename: str,
-                                  impute_atom_features: bool, advanced_logging: bool):
+def impute_postprocessed_missing_feature_values(input_pair_filename: str, output_pair_filename: str,
+                                                impute_atom_features: bool, advanced_logging: bool):
     """Impute missing feature values in a postprocessed dataset."""
     # Look at a .dill file in the given output directory
     postprocessed_pair: pa.Pair = pd.read_pickle(input_pair_filename)
