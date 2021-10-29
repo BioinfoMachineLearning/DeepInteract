@@ -701,6 +701,7 @@ def impute_missing_feature_values(output_dir='datasets/Input/final/raw',
               for pair_filename in Path(output_dir).rglob('*.dill')]
     # Without impute_atom_features set to True, non-CA atoms will be filtered out after writing updated pairs
     par.submit_jobs(impute_postprocessed_missing_feature_values, inputs, num_cpus)
+    logger.info('Feature imputation complete')
 
 
 def convert_input_pdb_files_to_pair(left_pdb_filepath: str, right_pdb_filepath: str, input_dataset_dir: str,
