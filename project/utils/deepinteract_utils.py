@@ -591,10 +591,11 @@ def make_dataset(input_dataset_dir='datasets/Input/raw', output_dir='datasets/In
     parsed_dir = os.path.join(output_dir, 'parsed')
     pa.parse_all(input_dataset_dir, parsed_dir, num_cpus)
 
-    complexes_dill = os.path.join(output_dir, 'complexes/complexes.dill')
-    os.remove(complexes_dill)  # Ensure that pairs are made everytime this function is called
-    comp.complexes(parsed_dir, complexes_dill, source_type)
-    complexes = comp.read_complexes(complexes_dill)
+    complexes_dill_filepath = os.path.join(output_dir, 'complexes/complexes.dill')
+    if os.path.exists(complexes_dill_filepath):
+        os.remove(complexes_dill_filepath)  # Ensure that pairs are made everytime this function is called
+    comp.complexes(parsed_dir, complexes_dill_filepath, source_type)
+    complexes = comp.read_complexes(complexes_dill_filepath)
     pairs_dir = os.path.join(output_dir, 'pairs')
     get_neighbors = nb.build_get_neighbors(neighbor_def, cutoff)
     get_pairs = pair.build_get_pairs(neighbor_def, source_type, unbound, get_neighbors, False)
