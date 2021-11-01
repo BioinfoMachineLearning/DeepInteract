@@ -3,6 +3,7 @@ setuptools==57.4.0
 atom3-py3==0.1.9.8
 click==8.0.1
 easy-parallel-py3==0.1.6.4
+biopandas==0.2.9
 dill==0.3.4
 tqdm==4.62.0
 Sphinx==4.0.1

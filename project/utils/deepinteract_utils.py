@@ -1,3 +1,4 @@
+import difflib
 import itertools
 import logging
 import os
@@ -27,6 +28,7 @@ from Bio import pairwise2
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from biopandas.pdb import PandasPdb
 from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 
 from project.utils.deepinteract_constants import FEAT_COLS, ALLOWABLE_FEATS, D3TO1
@@ -593,9 +595,11 @@ def copy_input_to_raw_dir(input_dataset_dir: str, pdb_filepath: str, pdb_code: s
     """Make a copy of the input PDB file in the newly-created raw directory."""
     filename = db.get_pdb_code(pdb_filepath) + f'_{chain_indic}.pdb' \
         if chain_indic not in pdb_filepath else db.get_pdb_name(pdb_filepath)
+    new_filepath = os.path.join(input_dataset_dir, "raw", pdb_code, filename)
     input_copy_cmd = f'cp {pdb_filepath} {os.path.join(input_dataset_dir, "raw", pdb_code, filename)}'
     input_copy_proc = subprocess.Popen(input_copy_cmd.split(), stdout=subprocess.PIPE, cwd=os.getcwd())
     _, _ = input_copy_proc.communicate()  # Wait until the input copy cmd is finished
+    return new_filepath
 
 
 def make_dataset(input_dataset_dir='datasets/Input/raw', output_dir='datasets/Input/interim', num_cpus=1,
@@ -616,6 +620,41 @@ def make_dataset(input_dataset_dir='datasets/Input/raw', output_dir='datasets/In
     get_neighbors = nb.build_get_neighbors(neighbor_def, cutoff)
     get_pairs = pair.build_get_pairs(neighbor_def, source_type, unbound, get_neighbors, False)
     pair.all_complex_to_pairs(complexes, source_type, get_pairs, pairs_dir, num_cpus)
+
+
+def recover_any_missing_chain_ids(interim_dataset_dir: str, new_pdb_filepath: str,
+                                  orig_pdb_filepath: str, pdb_code: str, chain_number: int):
+    """Restore any missing chain IDs for the chain represented by the corresponding Pandas DataFrame."""
+    orig_pdb_chain_id = '_'  # Default value for missing chain IDs
+    new_pdb_code = db.get_pdb_code(new_pdb_filepath)
+    orig_pdb_name = db.get_pdb_name(orig_pdb_filepath)
+    orig_pdb_df = PandasPdb().read_pdb(new_pdb_filepath).df['ATOM']
+    unique_chain_ids = np.unique(orig_pdb_df['chain_id'].values)
+    """Ascertain the chain ID corresponding to the original PDB file, using one of two available methods.
+      Method 1: Used with datasets such as EVCoupling adopting .atom filename extensions (e.g., 4DI3C.atom)
+      Method 2: Used with datasets such as DeepHomo adopting regular .pdb filename extensions (e.g., 2FNUA.pdb)"""
+    if len(unique_chain_ids) == 1 and unique_chain_ids[0].strip() == '':  # Method 1: Try to use filename differences
+        # No chain IDs were found, so we instead need to look to the original PDB filename to get the orig. chain ID
+        pdb_code_diffs = difflib.ndiff(new_pdb_code, orig_pdb_name)
+        for i, s in enumerate(pdb_code_diffs):
+            if s[0] == '+':
+                orig_pdb_chain_id = s[1:].strip()[0]
+                break
+    else:  # Method 2: Try to use unique chain IDs
+        # Assume the first/second index is the first non-empty chain ID (e.g., 'A')
+        orig_pdb_chain_id = unique_chain_ids[0] if (unique_chain_ids[0] != '') else unique_chain_ids[1]
+    # Update the existing Pair to contain the newly-recovered chain ID
+    pair_dir = os.path.join(interim_dataset_dir, 'pairs', pdb_code)
+    pair_filenames = [os.path.join(pair_dir, filename) for filename in os.listdir(pair_dir) if new_pdb_code in filename]
+    # Load in the existing Pair
+    with open(pair_filenames[0], 'rb') as f:
+        pair = dill.load(f)
+    # Update the corresponding chain ID
+    pair.df0.chain = orig_pdb_chain_id if chain_number == 1 else pair.df0.chain
+    pair.df1.chain = orig_pdb_chain_id if chain_number == 2 else pair.df1.chain
+    # Save the updated Pair
+    with open(pair_filenames[0], 'wb') as f:
+        dill.dump(pair, f)
 
 
 def generate_psaia_features(psaia_dir='~/Programs/PSAIA_1.0_source/bin/linux/psa',
@@ -727,9 +766,13 @@ def convert_input_pdb_files_to_pair(left_pdb_filepath: str, right_pdb_filepath: 
     pdb_code = db.get_pdb_group(list(ca.get_complex_pdb_codes([left_pdb_filepath, right_pdb_filepath]))[0])
     # Iteratively execute the PDB file feature generation process
     create_input_dir_struct(input_dataset_dir, pdb_code)
-    copy_input_to_raw_dir(input_dataset_dir, left_pdb_filepath, pdb_code, 'l_u')
-    copy_input_to_raw_dir(input_dataset_dir, right_pdb_filepath, pdb_code, 'r_u')
+    new_l_u_filepath = copy_input_to_raw_dir(input_dataset_dir, left_pdb_filepath, pdb_code, 'l_u')
+    new_r_u_filepath = copy_input_to_raw_dir(input_dataset_dir, right_pdb_filepath, pdb_code, 'r_u')
     make_dataset(os.path.join(input_dataset_dir, 'raw'), os.path.join(input_dataset_dir, 'interim'))
+    recover_any_missing_chain_ids(os.path.join(input_dataset_dir, 'interim'),
+                                  new_l_u_filepath, left_pdb_filepath, pdb_code, 1)
+    recover_any_missing_chain_ids(os.path.join(input_dataset_dir, 'interim'),
+                                  new_r_u_filepath, right_pdb_filepath, pdb_code, 2)
     generate_psaia_features(psaia_dir=psaia_dir,
                             psaia_config=psaia_config,
                             pdb_dataset=os.path.join(input_dataset_dir, 'raw'),
