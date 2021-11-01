@@ -32,7 +32,6 @@ def main(args):
                                          dips_percent_to_use=args.dips_percent_to_use,
                                          casp_capri_percent_to_use=args.casp_capri_percent_to_use,
                                          testing_with_casp_capri=args.testing_with_casp_capri,
-                                         use_dgl=args.use_dgl,
                                          process_complexes=args.process_complexes,
                                          input_indep=args.input_indep)
     picp_data_module.setup()

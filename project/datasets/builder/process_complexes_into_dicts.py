@@ -23,10 +23,9 @@ from project.utils.deepinteract_utils import process_complex_into_dict, construc
 @click.option('--mode', '-m', default='train', type=str)
 @click.option('--check_sequence', '-v', default=False, type=bool)
 @click.option('--percent_to_use', '-p', default=1.00)
-@click.option('--use_dgl', '-d', default=True)
 @click.option('--num_cpus', '-c', default=1)
 def main(input_dir: str, output_dir: str, source_type: str, knn: int, geo_nbrhd_size: int, self_loops: bool,
-         mode: str, check_sequence: bool, percent_to_use: float, use_dgl: bool, num_cpus: int):
+         mode: str, check_sequence: bool, percent_to_use: float, num_cpus: int):
     """Process complexes into dictionaries ready for training, validation, and testing."""
     logger = logging.getLogger(__name__)
     logger.info('Processing complexes into dictionaries for the given dataset')
@@ -62,7 +61,7 @@ def main(input_dir: str, output_dir: str, source_type: str, knn: int, geo_nbrhd_
         if trimmed_filename in filenames:
             input_filename = pair_filename
             output_filename = os.path.join(output_dir, trimmed_filename)
-            inputs.append((input_filename, output_filename, knn, geo_nbrhd_size, self_loops, check_sequence, use_dgl))
+            inputs.append((input_filename, output_filename, knn, geo_nbrhd_size, self_loops, check_sequence))
     submit_jobs(process_complex_into_dict, inputs, num_cpus)
 
 

@@ -45,8 +45,6 @@ class DIPSDGLDataset(DGLDataset):
         The positive-negative ratio to use when assembling training labels for node-node pairs. Default: 0.1.
     percent_to_use: float
         How much of the dataset to load. Default: 1.00.
-    use_dgl: bool
-        Whether to process each complex into a pair of DGL graphs for its final representation. Default: True.
     process_complexes: bool
         Whether to process each unprocessed complex as we load in the dataset. Default: True.
     input_indep: bool
@@ -83,7 +81,6 @@ class DIPSDGLDataset(DGLDataset):
                  self_loops=True,
                  pn_ratio=0.1,
                  percent_to_use=1.00,
-                 use_dgl=True,
                  process_complexes=True,
                  input_indep=False,
                  train_viz=False,
@@ -99,7 +96,6 @@ class DIPSDGLDataset(DGLDataset):
         self.self_loops = self_loops
         self.pn_ratio = pn_ratio
         self.percent_to_use = percent_to_use  # How much of the requested dataset (e.g. DIPS-Plus) to use
-        self.use_dgl = use_dgl  # Whether to process each complex into a pair of DGL graphs for its final representation
         self.process_complexes = process_complexes  # Whether to process any unprocessed complexes before training
         self.input_indep = input_indep  # Whether to use an input-independent pipeline to train the model
         self.train_viz = train_viz  # Whether to curate the training loop's validation samples for visualization
@@ -183,9 +179,8 @@ class DIPSDGLDataset(DGLDataset):
                 if not os.path.exists(processed_filepath):
                     processed_parent_dir_to_make = os.path.join(self.processed_dir, os.path.split(raw_path[0])[0])
                     os.makedirs(processed_parent_dir_to_make, exist_ok=True)
-                    process_complex_into_dict(raw_filepath, processed_filepath,
-                                              self.knn, self.geo_nbrhd_size, self.self_loops,
-                                              check_sequence=False, use_dgl=self.use_dgl)
+                    process_complex_into_dict(raw_filepath, processed_filepath, self.knn,
+                                              self.geo_nbrhd_size, self.self_loops, check_sequence=False)
 
     def has_cache(self):
         """Check if each complex is downloaded and available for training, validation, or testing."""
@@ -209,27 +204,9 @@ class DIPSDGLDataset(DGLDataset):
         -------
         :class:`dict`
 
-            (If process_complexes_into_dicts() was run with use_dgl=True):
-            Protein complex, DGLGraphs for each of the complex's structures.
-
     - ``complex['graph1']:`` DGLGraph (of length M) containing each of the first graph's encoded node and edge features
     - ``complex['graph2']:`` DGLGraph (of length N) containing each of the second graph's encoded node and edge features
     - ``complex['examples']:`` PyTorch Tensor (of shape (M x N) x 3) containing the labels for inter-graph node pairs
-    - ``complex['complex']:`` Python string describing the complex's code and original pdb filename
-    - ``complex['filepath']:`` Python string describing the complex's filepath
-
-            (If process_complexes_into_dicts() was run with use_dgl=False):
-            Protein complex, feature tensors for each node and edge and indices of each node's neighboring nodes.
-
-    - ``complex['graph1_node_feats']:`` PyTorch Tensor containing each of the first graph's encoded node features
-    - ``complex['graph2_node_feats']``: PyTorch Tensor containing each of the second graph's encoded node features
-    - ``complex['graph1_node_coords']:`` PyTorch Tensor containing each of the first graph's node coordinates
-    - ``complex['graph2_node_coords']``: PyTorch Tensor containing each of the second graph's node coordinates
-    - ``complex['graph1_edge_feats']:`` PyTorch Tensor containing each of the first graph's edge features for each node
-    - ``complex['graph2_edge_feats']:`` PyTorch Tensor containing each of the second graph's edge features for each node
-    - ``complex['graph1_nbrhd_indices']:`` PyTorch Tensor containing each of the first graph's neighboring node indices
-    - ``complex['graph2_nbrhd_indices']:`` PyTorch Tensor containing each of the second graph's neighboring node indices
-    - ``complex['examples']:`` PyTorch Tensor containing the labels for inter-graph node pairs
     - ``complex['complex']:`` Python string describing the complex's code and original pdb filename
     - ``complex['filepath']:`` Python string describing the complex's filepath
         """

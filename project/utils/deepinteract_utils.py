@@ -395,13 +395,29 @@ def convert_df_to_dgl_graph(df: pd.DataFrame, input_file: str, knn: int,
 
 ...     node_feats = graph.ndata['f']
 ...     node_coords = graph.ndata['x']
-...     edge_weights = graph.edata['w']
-...     residue_residue_angles = graph.edata['a']
+...     edge_feats = graph.edata['f']
 
         - ``ndata['f']``: feature tensors of the nodes
+                            Indices:
+                            'node_pos_enc': 0,
+                            'node_geo_feats_start': 1,
+                            'node_geo_feats_end': 7,
+                            'node_dips_plus_feats_start': 7,
+                            'node_dips_plus_feats_end': 113,
         - ``ndata['x']:`` Cartesian coordinate tensors of the nodes
-        - ``edata['w']``: squared node-node coordinate differences with min-max normalization (i.e. edge weights)
-        - ``edata['a']``: feature tensors encoding the angles between amino acid amide planes
+        - ``edata['f']``: feature tensors of the edges
+                            Indices:
+                            'edge_pos_enc': 0,
+                            'edge_weights': 1,
+                            'edge_dist_feats_start': 2,
+                            'edge_dist_feats_end': 20,
+                            'edge_dir_feats_start': 20,
+                            'edge_dir_feats_end': 23,
+                            'edge_orient_feats_start': 23,
+                            'edge_orient_feats_end': 27,
+                            'edge_amide_angles': 27
+        - ``edata['src_nbr_e_ids']``: For edge e, integer IDs of incident edges connected to e's source node
+        - ``edata['dst_nbr_e_ids']``: For edge e, integer IDs of incident edges connected to e's destination node
     """
     # Derive node features, with edges being defined via a k-nearest neighbors approach and a maximum distance threshold
     backbone_atom_names = ['N', 'CA', 'C', 'O']
@@ -821,8 +837,8 @@ def check_percent_identity(input_filename: str, compare_filenames: List[str], pe
                 f' w.r.t all chains in comparison files')
 
 
-def process_complex_into_dict(raw_filepath: str, processed_filepath: str, knn: int, geo_nbrhd_size: int,
-                              self_loops: bool, check_sequence: bool, use_dgl: bool):
+def process_complex_into_dict(raw_filepath: str, processed_filepath: str, knn: int,
+                              geo_nbrhd_size: int, self_loops: bool, check_sequence: bool):
     """Process protein complex into a dictionary representing both structures and ready for a given mode (e.g. val)."""
     # Retrieve specified DIPS+ (RCSB) complex
     bound_complex: pa.Pair = pd.read_pickle(raw_filepath)
@@ -850,62 +866,13 @@ def process_complex_into_dict(raw_filepath: str, processed_filepath: str, knn: i
     # Assemble the examples (containing labels) for the complex
     examples = build_examples_tensor(df0, df1, bound_complex.pos_idx)
 
-    # Represent each complex as a pair of DGL graphs
-    if use_dgl:
-        processed_complex = {
-            'graph1': graph1,
-            'graph2': graph2,
-            'examples': examples,
-            'complex': bound_complex.complex
-        }
-    # Use pure PyTorch tensors to represent a given complex
-    else:
-        # Assemble tensors for storage in complex's processed dictionary
-        graph1_node_feats = graph1.ndata['f']  # (n_nodes, n_node_feats)
-        graph2_node_feats = graph2.ndata['f']
-
-        graph1_node_coords = graph1.ndata['x']  # (n_nodes, 3)
-        graph2_node_coords = graph2.ndata['x']
-
-        # Collect the neighboring node and in-edge features for each of the first graph's nodes (in a consistent order)
-        graph1_edge_feats = []
-        graph1_nbrhd_indices = []
-        for h_i in graph1.nodes():
-            in_edge_ids_for_h_i = graph1.in_edges(h_i)
-            in_edges_for_h_i = graph1.edges[in_edge_ids_for_h_i]
-            graph1_edge_feats.append(torch.cat((in_edges_for_h_i.data['w'].reshape(-1, 1),
-                                                in_edges_for_h_i.data['a'].reshape(-1, 1)), dim=1))
-            dst_node_ids_for_h_i = in_edge_ids_for_h_i[0].reshape(-1, 1)
-            graph1_nbrhd_indices.append(dst_node_ids_for_h_i)
-        graph1_edge_feats = torch.stack(graph1_edge_feats)  # (n_nodes, nbrhd_size, n_edge_feats)
-        graph1_nbrhd_indices = torch.stack(graph1_nbrhd_indices)  # (n_nodes, nbrhd_size, 1)
-
-        # Collect the neighboring node and in-edge features for each of the second graph's nodes (in a consistent order)
-        graph2_edge_feats = []
-        graph2_nbrhd_indices = []
-        for h_i in graph2.nodes():
-            in_edge_ids_for_h_i = graph2.in_edges(h_i)
-            in_edges_for_h_i = graph2.edges[in_edge_ids_for_h_i]
-            graph2_edge_feats.append(torch.cat((in_edges_for_h_i.data['w'].reshape(-1, 1),
-                                                in_edges_for_h_i.data['a'].reshape(-1, 1)), dim=1))
-            dst_node_ids_for_h_i = in_edge_ids_for_h_i[0].reshape(-1, 1)
-            graph2_nbrhd_indices.append(dst_node_ids_for_h_i)
-        graph2_edge_feats = torch.stack(graph2_edge_feats)
-        graph2_nbrhd_indices = torch.stack(graph2_nbrhd_indices)
-
-        # Initialize the complex's new representation as a dictionary
-        processed_complex = {
-            'graph1_node_feats': graph1_node_feats,
-            'graph2_node_feats': graph2_node_feats,
-            'graph1_node_coords': graph1_node_coords,
-            'graph2_node_coords': graph2_node_coords,
-            'graph1_edge_feats': graph1_edge_feats,
-            'graph2_edge_feats': graph2_edge_feats,
-            'graph1_nbrhd_indices': graph1_nbrhd_indices,
-            'graph2_nbrhd_indices': graph2_nbrhd_indices,
-            'examples': examples,
-            'complex': bound_complex.complex
-        }
+    # Represent each complex as a pair of DGL graphs stored in a dictionary
+    processed_complex = {
+        'graph1': graph1,
+        'graph2': graph2,
+        'examples': examples,
+        'complex': bound_complex.complex
+    }
 
     # Write into processed_filepath
     processed_file_dir = os.path.join(*processed_filepath.split(os.sep)[: -1])
@@ -964,7 +931,6 @@ def collect_args():
     parser.add_argument('--dips_data_dir', type=str, default='datasets/DIPS/final/raw', help='Path to DIPS')
     parser.add_argument('--casp_capri_data_dir', type=str, default='datasets/CASP_CAPRI/final/raw', help='CAPRI path')
     parser.add_argument('--casp_capri_percent_to_use', type=float, default=1.0, help='Fraction of CASP-CAPRI to use')
-    parser.add_argument('--use_dgl', action='store_true', dest='use_dgl', help='Use DGL graph pairs for complexes')
     parser.add_argument('--process_complexes', action='store_true', dest='process_complexes',
                         help='Check if all complexes for a dataset are processed and, if not, process those remaining')
     parser.add_argument('--testing_with_casp_capri', action='store_true', dest='testing_with_casp_capri',

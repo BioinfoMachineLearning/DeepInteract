@@ -25,8 +25,8 @@ class PICPDGLDataModule(LightningDataModule):
 
     def __init__(self, dips_data_dir: str, casp_capri_data_dir: str, batch_size: int, num_dataloader_workers: int,
                  knn: int, self_loops: bool, pn_ratio: float, dips_percent_to_use: float,
-                 casp_capri_percent_to_use: float, testing_with_casp_capri: bool, use_dgl: bool,
-                 process_complexes: bool, input_indep: bool):
+                 casp_capri_percent_to_use: float, testing_with_casp_capri: bool, process_complexes: bool,
+                 input_indep: bool):
         super().__init__()
 
         self.dips_data_dir = dips_data_dir
@@ -45,40 +45,38 @@ class PICPDGLDataModule(LightningDataModule):
         self.casp_capri_percent_to_use = casp_capri_percent_to_use
         # Whether to test on the 13th and 14th CASP-CAPRI's dataset of homo and heterodimers
         self.testing_with_casp_capri = testing_with_casp_capri
-        # Whether to process each complex into a pair of DGL graphs for its final representation
-        self.use_dgl = use_dgl
         # Whether to process any unprocessed complexes before training
         self.process_complexes = process_complexes
         # Whether to use an input-independent pipeline to train the model, to see if the input data is actually helpful
         self.input_indep = input_indep
         # Which collation function to use
-        self.collate_fn = dgl_picp_collate if self.use_dgl else lambda x: x
+        self.collate_fn = dgl_picp_collate
 
     def setup(self, stage: Optional[str] = None):
         # Assign training/validation/testing data set for use in DataLoaders - called on every GPU
         self.dips_train = DIPSDGLDataset(mode='train', raw_dir=self.dips_data_dir, knn=self.knn,
                                          self_loops=self.self_loops, pn_ratio=self.pn_ratio,
-                                         percent_to_use=self.dips_percent_to_use, use_dgl=self.use_dgl,
+                                         percent_to_use=self.dips_percent_to_use,
                                          process_complexes=self.process_complexes, input_indep=self.input_indep)
         self.dips_val = DIPSDGLDataset(mode='val', raw_dir=self.dips_data_dir, knn=self.knn,
                                        self_loops=self.self_loops, pn_ratio=self.pn_ratio,
-                                       percent_to_use=self.dips_percent_to_use, use_dgl=self.use_dgl,
+                                       percent_to_use=self.dips_percent_to_use,
                                        process_complexes=self.process_complexes, input_indep=self.input_indep)
         self.dips_val_viz = DIPSDGLDataset(mode='val', raw_dir=self.dips_data_dir, knn=self.knn,
                                            self_loops=self.self_loops, pn_ratio=self.pn_ratio,
-                                           percent_to_use=self.dips_percent_to_use, use_dgl=self.use_dgl,
+                                           percent_to_use=self.dips_percent_to_use,
                                            process_complexes=self.process_complexes, input_indep=self.input_indep,
                                            train_viz=True)
         if self.testing_with_casp_capri:
             self.casp_capri_test = CASPCAPRIDGLDataset(mode='test', raw_dir=self.casp_capri_data_dir, knn=self.knn,
                                                        self_loops=self.self_loops,
                                                        percent_to_use=self.casp_capri_percent_to_use,
-                                                       use_dgl=self.use_dgl, process_complexes=self.process_complexes,
+                                                       process_complexes=self.process_complexes,
                                                        input_indep=self.input_indep)
         else:  # Default to testing with DIPS-Plus
             self.dips_test = DIPSDGLDataset(mode='test', raw_dir=self.dips_data_dir, knn=self.knn,
                                             self_loops=self.self_loops, pn_ratio=self.pn_ratio,
-                                            percent_to_use=self.dips_percent_to_use, use_dgl=self.use_dgl,
+                                            percent_to_use=self.dips_percent_to_use,
                                             process_complexes=self.process_complexes, input_indep=self.input_indep)
 
     def train_dataloader(self) -> DataLoader:
