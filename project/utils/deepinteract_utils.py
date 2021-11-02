@@ -628,8 +628,8 @@ def recover_any_missing_chain_ids(interim_dataset_dir: str, new_pdb_filepath: st
     orig_pdb_chain_id = '_'  # Default value for missing chain IDs
     new_pdb_code = db.get_pdb_code(new_pdb_filepath)
     orig_pdb_name = db.get_pdb_name(orig_pdb_filepath)
-    orig_pdb_df = PandasPdb().read_pdb(new_pdb_filepath).df['ATOM']
-    unique_chain_ids = np.unique(orig_pdb_df['chain_id'].values)
+    new_pdb_obj = PandasPdb().read_pdb(new_pdb_filepath)
+    unique_chain_ids = np.unique(new_pdb_obj.df['ATOM']['chain_id'].values)
 
     """Ascertain the chain ID corresponding to the original PDB file, using one of two available methods.
       Method 1: Used with datasets such as EVCoupling adopting .atom filename extensions (e.g., 4DI3C.atom)
@@ -644,6 +644,13 @@ def recover_any_missing_chain_ids(interim_dataset_dir: str, new_pdb_filepath: st
     else:  # Method 2: Try to use unique chain IDs
         # Assume the first/second index is the first non-empty chain ID (e.g., 'A')
         orig_pdb_chain_id = unique_chain_ids[0] if (unique_chain_ids[0] != '') else unique_chain_ids[1]
+
+    # Update version of the input PDB file copied to input_dataset_dir
+    new_pdb_obj.df['ATOM']['chain_id'] = orig_pdb_chain_id
+    new_pdb_obj.df['HETATM']['chain_id'] = orig_pdb_chain_id
+    new_pdb_obj.df['ANISOU']['chain_id'] = orig_pdb_chain_id
+    new_pdb_obj.df['OTHERS']['chain_id'] = orig_pdb_chain_id
+    new_pdb_obj.to_pdb(new_pdb_filepath, records=None, gz=False, append_newline=True)
 
     # Update existing parsed chains to contain the newly-recovered chain ID
     parsed_dir = os.path.join(interim_dataset_dir, 'parsed', pdb_code)
@@ -818,7 +825,7 @@ def convert_input_pdb_files_to_pair(left_pdb_filepath: str, right_pdb_filepath: 
         output_dir = os.path.join(input_dataset_dir, 'final', 'raw')
         produced_filenames = db.get_structures_filenames(output_dir, extension='.dill')
         produced_keys = [db.get_pdb_name(x) for x in produced_filenames
-                         if db.get_pdb_code(x).upper() in db.get_pdb_code(left_pdb_filepath).upper()]
+                         if db.get_pdb_code(x).upper() in db.get_pdb_code(new_l_u_filepath).upper()]
         pair_filepath = [os.path.join(output_dir, db.get_pdb_code(key)[1:3], key)
                          for key in produced_keys][0]
     # Impute any missing feature values in the postprocessed input pairs
