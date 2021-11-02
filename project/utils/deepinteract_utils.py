@@ -630,6 +630,7 @@ def recover_any_missing_chain_ids(interim_dataset_dir: str, new_pdb_filepath: st
     orig_pdb_name = db.get_pdb_name(orig_pdb_filepath)
     orig_pdb_df = PandasPdb().read_pdb(new_pdb_filepath).df['ATOM']
     unique_chain_ids = np.unique(orig_pdb_df['chain_id'].values)
+
     """Ascertain the chain ID corresponding to the original PDB file, using one of two available methods.
       Method 1: Used with datasets such as EVCoupling adopting .atom filename extensions (e.g., 4DI3C.atom)
       Method 2: Used with datasets such as DeepHomo adopting regular .pdb filename extensions (e.g., 2FNUA.pdb)"""
@@ -643,9 +644,24 @@ def recover_any_missing_chain_ids(interim_dataset_dir: str, new_pdb_filepath: st
     else:  # Method 2: Try to use unique chain IDs
         # Assume the first/second index is the first non-empty chain ID (e.g., 'A')
         orig_pdb_chain_id = unique_chain_ids[0] if (unique_chain_ids[0] != '') else unique_chain_ids[1]
+
+    # Update existing parsed chains to contain the newly-recovered chain ID
+    parsed_dir = os.path.join(interim_dataset_dir, 'parsed', pdb_code)
+    parsed_filenames = [
+        os.path.join(parsed_dir, filename) for filename in os.listdir(parsed_dir) if new_pdb_code in filename
+    ]
+    parsed_filenames.sort()
+    # Load in the existing Pair
+    chain_df = pd.read_pickle(parsed_filenames[chain_number - 1])
+    # Update the corresponding chain ID
+    chain_df.chain = orig_pdb_chain_id
+    # Save the updated Pair
+    chain_df.to_pickle(parsed_filenames[chain_number - 1])
+
     # Update the existing Pair to contain the newly-recovered chain ID
     pair_dir = os.path.join(interim_dataset_dir, 'pairs', pdb_code)
     pair_filenames = [os.path.join(pair_dir, filename) for filename in os.listdir(pair_dir) if new_pdb_code in filename]
+    pair_filenames.sort()
     # Load in the existing Pair
     with open(pair_filenames[0], 'rb') as f:
         pair = dill.load(f)
