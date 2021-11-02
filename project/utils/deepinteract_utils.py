@@ -693,7 +693,8 @@ def launch_postprocessing_of_pruned_pairs(raw_pdb_dir='datasets/Input/raw',
                                           external_feats_dir='datasets/Input/interim/external_feats',
                                           output_dir='datasets/Input/final/raw',
                                           num_cpus=1,
-                                          source_type='input'):
+                                          source_type='input',
+                                          pdb_code=''):
     """Run postprocess_pruned_pairs() on all provided complexes."""
     logger = logging.getLogger(__name__)
     logger.info(f'Starting postprocessing for all unprocessed pairs in {pruned_pairs_dir}')
@@ -715,7 +716,8 @@ def launch_postprocessing_of_pruned_pairs(raw_pdb_dir='datasets/Input/raw',
     work_filenames = [os.path.join(pruned_pairs_dir, db.get_pdb_code(work_key)[1:3], work_key + rscb_pruned_pair_ext)
                       for work_key in work_keys]
     input_work_filenames = [os.path.join(pruned_pairs_dir, db.get_pdb_code(work_key)[1:3],
-                                         work_key + rscb_pruned_pair_ext) for work_key in input_work_keys]
+                                         work_key + rscb_pruned_pair_ext) for work_key in input_work_keys
+                            if pdb_code in work_key]
     logger.info(f'Found {len(work_keys)} work pair(s) in {pruned_pairs_dir}')
 
     # Remove any duplicate filenames
@@ -789,7 +791,8 @@ def convert_input_pdb_files_to_pair(left_pdb_filepath: str, right_pdb_filepath: 
         raw_pdb_dir=os.path.join(input_dataset_dir, 'raw'),
         pruned_pairs_dir=os.path.join(input_dataset_dir, 'interim', 'pairs'),
         external_feats_dir=os.path.join(input_dataset_dir, 'interim', 'external_feats'),
-        output_dir=os.path.join(input_dataset_dir, 'final', 'raw')
+        output_dir=os.path.join(input_dataset_dir, 'final', 'raw'),
+        pdb_code=pdb_code
     )
     if len(pair_filepaths) > 0:
         # Retrieve the filepath of the single input pair produced in this case
