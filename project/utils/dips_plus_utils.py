@@ -433,6 +433,7 @@ def postprocess_pruned_pair(raw_pdb_filenames: List[str], external_feats_dir: st
     sequences = {}
     dssp_dicts, rd_dicts, psaia_dfs, coordinate_numbers_list, hsaac_matrices, sequence_feats_dfs = [], [], [], \
                                                                                                    [], [], []
+    raw_pdb_filenames.sort()  # Ensure the left input PDB is processed first
     for struct_idx, raw_pdb_filename in enumerate(raw_pdb_filenames):
         is_rcsb_complex = source_type.lower() in ['rcsb', 'evcoupling', 'casp_capri']
 
@@ -460,8 +461,9 @@ def postprocess_pruned_pair(raw_pdb_filenames: List[str], external_feats_dir: st
 
             # Get protrusion indices using PSAIA
             pdb_code = db.get_pdb_code(raw_pdb_filename)
-            psaia_filename = [path for path in Path(external_feats_dir).rglob(f'{pdb_code}*.tbl')][0]  # 1st path
-            psaia_df = get_df_from_psaia_tbl_file(psaia_filename)
+            psaia_filenames = [path for path in Path(external_feats_dir).rglob(f'{pdb_code}*.tbl')]
+            psaia_filenames.sort()  # Ensure the left input PDB is processed first
+            psaia_df = get_df_from_psaia_tbl_file(psaia_filenames[struct_idx])
 
             # Extract half-sphere exposure (HSE) statistics for each PDB model (including HSAAC and CN values)
             similarity_matrix, coordinate_numbers = get_similarity_matrix(get_coords(residues))
