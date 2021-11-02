@@ -793,6 +793,10 @@ def convert_input_pdb_files_to_pair(left_pdb_filepath: str, right_pdb_filepath: 
     create_input_dir_struct(input_dataset_dir, pdb_code)
     new_l_u_filepath = copy_input_to_raw_dir(input_dataset_dir, left_pdb_filepath, pdb_code, 'l_u')
     new_r_u_filepath = copy_input_to_raw_dir(input_dataset_dir, right_pdb_filepath, pdb_code, 'r_u')
+    if not os.path.exists(new_l_u_filepath):
+        raise FileNotFoundError(f'The left PDB file was not found: {new_l_u_filepath}')
+    if not os.path.exists(new_r_u_filepath):
+        raise FileNotFoundError(f'The right PDB file was not found: {new_r_u_filepath}')
     make_dataset(os.path.join(input_dataset_dir, 'raw'), os.path.join(input_dataset_dir, 'interim'))
     recover_any_missing_chain_ids(os.path.join(input_dataset_dir, 'interim'),
                                   new_l_u_filepath, left_pdb_filepath, pdb_code, 1)
