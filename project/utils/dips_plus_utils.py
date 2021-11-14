@@ -421,7 +421,8 @@ def postprocess_pruned_pairs(raw_pdb_dir: str, external_feats_dir: str, pair_fil
 
 def postprocess_pruned_pair(raw_pdb_filenames: List[str], external_feats_dir: str, original_pair, source_type: str):
     """Construct a new Pair consisting of residues of structures with DSSP-derivable features and append DSSP secondary structure (SS) features to each protein structure dataframe as well."""
-    chains_selected = [original_pair.df0['chain'][0], original_pair.df1['chain'][0]]
+    chains_selected = list(set([chain for chain in original_pair.df0['chain'].values] +
+                               [chain for chain in original_pair.df1['chain'].values]))  # Support all multimer chains
     df0_ss_values, df0_rsa_values, df0_rd_values, df0_protrusion_indices, \
     df0_hsaacs, df0_cn_values, df0_sequence_feats, df0_amide_norm_vecs, \
     df1_ss_values, df1_rsa_values, df1_rd_values, df1_protrusion_indices, \
@@ -492,7 +493,7 @@ def postprocess_pruned_pair(raw_pdb_filenames: List[str], external_feats_dir: st
     df0_rd_dict = rd_dicts[0]
     df0_hsaac_matrix = hsaac_matrices[0]
     df0_coordinate_numbers = coordinate_numbers_list[0]
-    df0_raw_pdf_filename = raw_pdb_filenames[0]
+    df0_raw_pdb_filename = raw_pdb_filenames[0]
     df0_psaia_df = psaia_dfs[0]
     df0_sequence_feats_df = sequence_feats_dfs[0]
 
@@ -533,7 +534,7 @@ def postprocess_pruned_pair(raw_pdb_filenames: List[str], external_feats_dir: st
         # Handle missing normal vectors
         if is_ca_atom and np.nan in norm_vec_for_atom:
             logging.info(f'Normal vector missing for df0 residue {row.residue}'
-                         f'in chain {row.chain} in file {df0_raw_pdf_filename}')
+                         f'in chain {row.chain} in file {df0_raw_pdb_filename}')
             df0_amide_norm_vecs.append(np.array(norm_vec_for_atom))
         elif is_ca_atom:  # Normal vector was found successfully
             df0_amide_norm_vecs.append(norm_vec_for_atom[0])  # 2D array with a single inner array -> 1D array
@@ -586,7 +587,7 @@ def postprocess_pruned_pair(raw_pdb_filenames: List[str], external_feats_dir: st
     df1_rd_dict = rd_dicts[0] if single_raw_pdb_file_provided else rd_dicts[1]
     df1_hsaac_matrix = hsaac_matrices[0] if single_raw_pdb_file_provided else hsaac_matrices[1]
     df1_coordinate_numbers = coordinate_numbers_list[0] if single_raw_pdb_file_provided else coordinate_numbers_list[1]
-    df1_raw_pdf_filename = raw_pdb_filenames[0] if single_raw_pdb_file_provided else raw_pdb_filenames[1]
+    df1_raw_pdb_filename = raw_pdb_filenames[0] if single_raw_pdb_file_provided else raw_pdb_filenames[1]
     df1_psaia_df = psaia_dfs[0] if single_raw_pdb_file_provided else psaia_dfs[1]
     df1_sequence_feats_df = sequence_feats_dfs[0] if single_raw_pdb_file_provided else sequence_feats_dfs[1]
 
@@ -627,7 +628,7 @@ def postprocess_pruned_pair(raw_pdb_filenames: List[str], external_feats_dir: st
         # Handle missing normal vectors
         if is_ca_atom and np.nan in norm_vec_for_atom:
             logging.info(f'Normal vector missing for df1 residue {row.residue}'
-                         f'in chain {row.chain} in file {df1_raw_pdf_filename}')
+                         f'in chain {row.chain} in file {df1_raw_pdb_filename}')
             df1_amide_norm_vecs.append(np.array(norm_vec_for_atom))
         elif is_ca_atom:  # Normal vector was found successfully
             df1_amide_norm_vecs.append(norm_vec_for_atom[0])  # 2D array with a single inner array -> 1D array
