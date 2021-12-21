@@ -2,7 +2,7 @@
 
 # DeepInteract
 
-[![Paper](http://img.shields.io/badge/paper-arxiv.2110.02423-B31B1B.svg)](https://arxiv.org/abs/2110.02423) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5546775.svg)](https://doi.org/10.5281/zenodo.5546775)
+[![Paper](http://img.shields.io/badge/paper-arxiv.2110.02423-B31B1B.svg)](https://arxiv.org/abs/2110.02423) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5797024.svg)](https://doi.org/10.5281/zenodo.5797024)
 
 [<img src="https://twixes.gallerycdn.vsassets.io/extensions/twixes/pypi-assistant/1.0.3/1589834023190/Microsoft.VisualStudio.Services.Icons.Default" width="50"/>](https://pypi.org/project/DeepInteract/)
 
@@ -234,11 +234,12 @@ Now that we know Docker is functioning properly, we can begin building our Docke
     DI_DIR=$(pwd)
     ```
    
-2. Download the trained model checkpoint.
+2. Download our trained model checkpoints.
 
     ```bash
     mkdir -p project/checkpoints
-    wget -P project/checkpoints https://zenodo.org/record/5546775/files/LitGINI-GeoTran-DilResNet.ckpt
+    wget -P project/checkpoints https://zenodo.org/record/5797024/files/LitGINI-GeoTran-DilResNet.ckpt
+    wget -P project/checkpoints https://zenodo.org/record/5797024/files/LitGINI-GeoTran-DilResNet-DB5-Fine-Tuned.ckpt
     ```
 
 3. Build the Docker image (Warning: Requires ~13GB of Space):
@@ -398,9 +399,9 @@ mkdir -p project/datasets/DIPS/final
 cd project/datasets/DIPS/final
 
 # Download DIPS-Plus
-wget https://zenodo.org/record/5546775/files/final_raw_dips.tar.gz
-wget https://zenodo.org/record/5546775/files/final_processed_dips.tar.gz.partaa
-wget https://zenodo.org/record/5546775/files/final_processed_dips.tar.gz.partab
+wget https://zenodo.org/record/5797024/files/final_raw_dips.tar.gz
+wget https://zenodo.org/record/5797024/files/final_processed_dips.tar.gz.partaa
+wget https://zenodo.org/record/5797024/files/final_processed_dips.tar.gz.partab
 
 # First, reassemble all processed DGLGraphs
 # We split the (tar.gz) archive into two separate parts with
@@ -416,8 +417,8 @@ rm final_processed_dips.tar.gz.parta* final_raw_dips.tar.gz final_processed_dips
 # Download CASP-CAPRI
 mkdir -p ../../CASP_CAPRI/final
 cd ../../CASP_CAPRI/final
-wget https://zenodo.org/record/5546775/files/final_raw_casp_capri.tar.gz
-wget https://zenodo.org/record/5546775/files/final_processed_casp_capri.tar.gz
+wget https://zenodo.org/record/5797024/files/final_raw_casp_capri.tar.gz
+wget https://zenodo.org/record/5797024/files/final_processed_casp_capri.tar.gz
 
 # Extract CASP-CAPRI
 tar -xzf final_raw_casp_capri.tar.gz
@@ -442,9 +443,10 @@ cd ..
 # Return to root directory of DeepInteract repository
 cd "$DI_DIR"
 
-# Download the trained model checkpoint
+# Download our trained model checkpoints
 mkdir -p project/checkpoints
-wget -P project/checkpoints https://zenodo.org/record/5546775/files/LitGINI-GeoTran-DilResNet.ckpt
+wget -P project/checkpoints https://zenodo.org/record/5797024/files/LitGINI-GeoTran-DilResNet.ckpt
+wget -P project/checkpoints https://zenodo.org/record/5797024/files/LitGINI-GeoTran-DilResNet-DB5-Fine-Tuned.ckpt
 ```
 
 ### Predict interface contact probability maps
