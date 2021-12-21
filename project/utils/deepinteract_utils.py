@@ -29,12 +29,11 @@ from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from biopandas.pdb import PandasPdb
-from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
-
 from project.utils.deepinteract_constants import FEAT_COLS, ALLOWABLE_FEATS, D3TO1
 from project.utils.dips_plus_utils import postprocess_pruned_pairs, impute_postprocessed_missing_feature_values
 from project.utils.graph_utils import prot_df_to_dgl_graph_feats
 from project.utils.protein_feature_utils import GeometricProteinFeatures
+from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 
 try:
     from types import SliceType
@@ -328,7 +327,7 @@ def substitute_missing_atoms(struct_df: pd.DataFrame, all_atom_struct_df: pd.Dat
                     raise NotImplementedError('Error: A missing atom was found, and it is not possible to process it.')
 
                 # Choose a replacement for the missing atom
-                available_atom_keys = set(atom_names) - {missing_atom_key}
+                available_atom_keys = set(atom_names) - {missing_atom_key, 'CA'}  # Disallow CA atoms from being a sub
                 replacement_atom_name = available_atom_keys.pop()  # Choose the first available atom as the substitute
                 replacement_atom = ca_atom_support_atoms[ca_atom_support_atoms['atom_name'] == replacement_atom_name]
                 logging.info(f'Found a missing {missing_atom_key} atom for row number {ca_atom_idx} -'
@@ -971,6 +970,17 @@ def calculate_top_k_prec(sorted_pred_indices: torch.Tensor, labels: torch.Tensor
     num_correct = torch.sum(true_labels).item()
     prec = num_correct / num_interactions_to_score
     return prec
+
+
+def calculate_top_k_recall(sorted_pred_indices: torch.Tensor, labels: torch.Tensor, k: int):
+    """Calculate the top-k interaction recall."""
+    num_interactions_to_score = k
+    selected_pred_indices = sorted_pred_indices[:num_interactions_to_score]
+    true_labels = labels[selected_pred_indices]
+    num_correct = torch.sum(true_labels).item()
+    num_pos_labels = torch.sum(labels).item()
+    recall = num_correct / num_pos_labels
+    return recall
 
 
 def extract_object(obj: any):

@@ -19,7 +19,7 @@ from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from project.utils.deepinteract_constants import FEATURE_INDICES, RESIDUE_COUNT_LIMIT, NODE_COUNT_LIMIT
 from project.utils.deepinteract_utils import construct_interact_tensor, glorot_orthogonal, get_geo_feats_from_edges, \
     construct_subsequenced_interact_tensors, insert_interact_tensor_logits, \
-    remove_padding, remove_subsequenced_input_padding, calculate_top_k_prec, extract_object
+    remove_padding, remove_subsequenced_input_padding, calculate_top_k_prec, calculate_top_k_recall, extract_object
 from project.utils.graph_utils import src_dot_dst, scaling, imp_exp_attn, out_edge_features, exp
 from project.utils.vision_modules import DeepLabV3Plus
 
@@ -1926,17 +1926,17 @@ class LitGINI(pl.LightningModule):
 
         # Calculate top-k metrics
         calculating_l_by_n_metrics = True
-        # Log only first 50 validation top-k precisions to limit algorithmic complexity due to sorting (if requested)
+        # Log only first 50 validation top-k metrics to limit algorithmic complexity due to sorting (if requested)
         # calculating_l_by_n_metrics = batch_idx in [i for i in range(50)]
         if calculating_l_by_n_metrics:
             l = graph1.num_nodes() + graph2.num_nodes()
             sorted_pred_indices = torch.argsort(preds[:, 1], descending=True)
             top_10_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=10)
-            top_25_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=25)
-            top_50_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=50) if l > 50 else 0.0  # Catch short seq.
             top_l_by_10_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=(l // 10))
             top_l_by_5_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=(l // 5))
-            top_l_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=l)
+            top_l_recall = calculate_top_k_recall(sorted_pred_indices, labels, k=l)
+            top_l_by_2_recall = calculate_top_k_recall(sorted_pred_indices, labels, k=(l // 2))
+            top_l_by_5_recall = calculate_top_k_recall(sorted_pred_indices, labels, k=(l // 5))
 
         # Calculate the protein interface prediction (PICP) loss along with additional PIP metrics
         loss = self.loss_fn(sampled_logits, labels)  # Calculate loss of a single complex
@@ -1951,11 +1951,11 @@ class LitGINI(pl.LightningModule):
         self.log(f'val_ce', loss, sync_dist=True)
         if calculating_l_by_n_metrics:
             self.log('val_top_10_prec', top_10_prec, sync_dist=True)
-            self.log('val_top_25_prec', top_25_prec, sync_dist=True)
-            self.log('val_top_50_prec', top_50_prec, sync_dist=True)
             self.log('val_top_l_by_10_prec', top_l_by_10_prec, sync_dist=True)
             self.log('val_top_l_by_5_prec', top_l_by_5_prec, sync_dist=True)
-            self.log('val_top_l_prec', top_l_prec, sync_dist=True)
+            self.log('val_top_l_recall', top_l_recall, sync_dist=True)
+            self.log('val_top_l_by_2_recall', top_l_by_2_recall, sync_dist=True)
+            self.log('val_top_l_by_5_recall', top_l_by_5_recall, sync_dist=True)
 
         return {
             'loss': loss,
@@ -2033,11 +2033,11 @@ class LitGINI(pl.LightningModule):
         l = min(graph1.num_nodes(), graph2.num_nodes())  # Use the smallest length of the two chains as our denominator
         sorted_pred_indices = torch.argsort(preds[:, 1], descending=True)
         top_10_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=10)
-        top_25_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=25)
-        top_50_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=50) if l > 50 else 0.0  # Catch short seq.
         top_l_by_10_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=(l // 10))
         top_l_by_5_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=(l // 5))
-        top_l_prec = calculate_top_k_prec(sorted_pred_indices, labels, k=l)
+        top_l_recall = calculate_top_k_recall(sorted_pred_indices, labels, k=l)
+        top_l_by_2_recall = calculate_top_k_recall(sorted_pred_indices, labels, k=(l // 2))
+        top_l_by_5_recall = calculate_top_k_recall(sorted_pred_indices, labels, k=(l // 5))
 
         # Calculate the protein interface prediction (PICP) loss along with additional PIP metrics
         loss = self.loss_fn(sampled_logits, labels)  # Calculate loss of a single complex
@@ -2062,11 +2062,11 @@ class LitGINI(pl.LightningModule):
         # Log test step metric(s)
         self.log(f'test_ce', loss, sync_dist=True)
         self.log('test_top_10_prec', top_10_prec, sync_dist=True)
-        self.log('test_top_25_prec', top_25_prec, sync_dist=True)
-        self.log('test_top_50_prec', top_50_prec, sync_dist=True)
         self.log('test_top_l_by_10_prec', top_l_by_10_prec, sync_dist=True)
         self.log('test_top_l_by_5_prec', top_l_by_5_prec, sync_dist=True)
-        self.log('test_top_l_prec', top_l_prec, sync_dist=True)
+        self.log('test_top_l_recall', top_l_recall, sync_dist=True)
+        self.log('test_top_l_by_2_recall', top_l_by_2_recall, sync_dist=True)
+        self.log('test_top_l_by_5_recall', top_l_by_5_recall, sync_dist=True)
 
         return {
             'loss': loss,
@@ -2082,6 +2082,9 @@ class LitGINI(pl.LightningModule):
             'top_10_prec': top_10_prec,
             'top_l_by_10_prec': top_l_by_10_prec,
             'top_l_by_5_prec': top_l_by_5_prec,
+            'top_l_recall': top_l_recall,
+            'top_l_by_2_recall': top_l_by_2_recall,
+            'top_l_by_5_recall': top_l_by_5_recall,
             'target': filepaths[0].split(os.sep)[-1][:4]
         }
 
@@ -2112,17 +2115,20 @@ class LitGINI(pl.LightningModule):
             test_preds_rounded = [(output_dict['test_preds_rounded']) for output_dict in outputs]
             test_labels = [output_dict['test_labels'] for output_dict in outputs]
 
-        # Write out test top-k precision results to CSV
-        prec_data = {
+        # Write out test top-k metric results to CSV
+        metrics_data = {
             'top_10_prec': [extract_object(output_dict['top_10_prec']) for output_dict in outputs],
             'top_l_by_10_prec': [extract_object(output_dict['top_l_by_10_prec']) for output_dict in outputs],
             'top_l_by_5_prec': [extract_object(output_dict['top_l_by_5_prec']) for output_dict in outputs],
+            'top_l_recall': [extract_object(output_dict['top_l_recall']) for output_dict in outputs],
+            'top_l_by_2_recall': [extract_object(output_dict['top_l_by_2_recall']) for output_dict in outputs],
+            'top_l_by_5_recall': [extract_object(output_dict['top_l_by_5_recall']) for output_dict in outputs],
             'target': [extract_object(output_dict['target']) for output_dict in outputs],
         }
-        prec_df = pd.DataFrame(data=prec_data)
-        prec_df_name_prefix = 'casp_capri' if self.testing_with_casp_capri else 'dips_plus_test'
-        prec_df_name = prec_df_name_prefix + '_top_prec.csv'
-        prec_df.to_csv(prec_df_name)
+        metrics_df = pd.DataFrame(data=metrics_data)
+        metrics_df_name_prefix = 'casp_capri' if self.testing_with_casp_capri else 'dips_plus_test'
+        metrics_df_name = metrics_df_name_prefix + '_top_metrics.csv'
+        metrics_df.to_csv(metrics_df_name)
 
         if not self.testing_with_casp_capri:  # Testing with DIPS-Plus
             # Filter out all but the first 55 test predictions and labels to reduce storage requirements
