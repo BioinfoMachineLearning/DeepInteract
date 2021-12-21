@@ -437,7 +437,7 @@ cd ..
 
 ## Inference
 
-### Download trained model checkpoint
+### Download trained model checkpoints
 
 ```bash
 # Return to root directory of DeepInteract repository
