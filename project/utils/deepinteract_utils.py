@@ -496,7 +496,7 @@ def convert_df_to_dgl_graph(df: pd.DataFrame, input_file: str, knn: int,
     # Positional encoding for each edge (used for sequentially-ordered inputs like proteins)
     graph.edata['f'] = torch.sin((graph.edges()[0] - graph.edges()[1]).float()).reshape(-1, 1)  # [num_edges, 1]
     # Normalized edge weights (according to Euclidean distance)
-    edge_weights = min_max_normalize_tensor(torch.sum(node_coords[srcs] - node_coords[dsts] ** 2, 1)).reshape(-1, 1)
+    edge_weights = min_max_normalize_tensor(torch.sum((node_coords[srcs] - node_coords[dsts]) ** 2, 1)).reshape(-1, 1)
     graph.edata['f'] = torch.cat((graph.edata['f'], edge_weights), dim=1)  # [num_edges, 1]
     # Geometric edge features derived above
     graph.edata['f'] = torch.cat((graph.edata['f'], edge_dist_feats), dim=1)  # Distance: [num_edges, num_rbf] if full
