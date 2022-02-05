@@ -1,8 +1,8 @@
 <div align="center">
 
-# DeepInteract
+# DeepInteract (ICLR 2022)
 
-[![Paper](http://img.shields.io/badge/paper-arxiv.2110.02423-B31B1B.svg)](https://arxiv.org/abs/2110.02423) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5797024.svg)](https://doi.org/10.5281/zenodo.5797024)
+[![Paper](http://img.shields.io/badge/paper-arxiv.2110.02423-B31B1B.svg)](https://openreview.net/forum?id=CS4463zx6Hi) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5797024.svg)](https://doi.org/10.5281/zenodo.5797024)
 
 [<img src="https://twixes.gallerycdn.vsassets.io/extensions/twixes/pypi-assistant/1.0.3/1589834023190/Microsoft.VisualStudio.Services.Icons.Default" width="50"/>](https://pypi.org/project/DeepInteract/)
 
