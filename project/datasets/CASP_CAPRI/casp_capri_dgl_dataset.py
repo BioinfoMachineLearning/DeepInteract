@@ -251,4 +251,4 @@ class CASPCAPRIDGLDataset(DGLDataset):
     @property
     def url(self) -> str:
         """URL with which to download TAR archive of preprocessed pairs."""
-        return 'https://zenodo.org/record/5546775/files/final_processed_casp_capri.tar.gz'
+        return 'https://zenodo.org/record/6299835/files/final_processed_casp_capri.tar.gz'

@@ -276,4 +276,4 @@ class DIPSDGLDataset(DGLDataset):
     @property
     def url(self) -> str:
         """URL with which to download TAR archive of preprocessed pairs (Need to manually download Part B)."""
-        return 'https://zenodo.org/record/5546775/files/final_processed_dips.tar.gz.partaa'
+        return 'https://zenodo.org/record/6299835/files/final_processed_dips.tar.gz.partaa'
