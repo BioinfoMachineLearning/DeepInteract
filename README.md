@@ -406,8 +406,8 @@ To train, fine-tune, or test DeepInteract models using CASP-CAPRI, DB5-Plus, or 
 # Download and extract preprocessed DGLGraphs for CASP-CAPRI, DB5-Plus, and DIPS-Plus
 # Requires ~55GB of free space
 # Download CASP-CAPRI
-mkdir -p ../../CASP_CAPRI/final
-cd ../../CASP_CAPRI/final
+mkdir -p project/datasets/CASP_CAPRI/final
+cd project/datasets/CASP_CAPRI/final
 wget https://zenodo.org/record/6299835/files/final_raw_casp_capri.tar.gz
 wget https://zenodo.org/record/6299835/files/final_processed_casp_capri.tar.gz
 
@@ -428,8 +428,8 @@ tar -xzf final_processed_db5.tar.gz
 rm final_raw_db5.tar.gz final_processed_db5.tar.gz
 
 # Download DIPS-Plus
-mkdir -p project/datasets/DIPS/final
-cd project/datasets/DIPS/final
+mkdir -p ../../DIPS/final
+cd ../../DIPS/final
 wget https://zenodo.org/record/6299835/files/final_raw_dips.tar.gz
 wget https://zenodo.org/record/6299835/files/final_processed_dips.tar.gz.partaa
 wget https://zenodo.org/record/6299835/files/final_processed_dips.tar.gz.partab
