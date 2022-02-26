@@ -133,11 +133,14 @@ dmypy.json
 .vscode
 .run
 
-# DIPS-Plus
-project/datasets/DIPS/final
-
 # CASP-CAPRI
 project/datasets/CASP_CAPRI/final
+
+# DB5-Plus
+project/datasets/DB5/final
+
+# DIPS-Plus
+project/datasets/DIPS/final
 
 # Input
 project/datasets/Input/raw

@@ -182,8 +182,8 @@ def main(argv):
     args.profiler = args.profiler_method
     args.accelerator = 'dp'  # Predict using Data Parallel (DP) and not Distributed Data Parallel (DDP) to avoid errors
     args.auto_select_gpus = args.auto_choose_gpus
-    args.gpus = FLAGS.num_gpus  # Allow user to choose how many GPUs to use for inference
-    args.num_nodes = 1  # Enforce predictions to to take place on a single node
+    args.gpus = FLAGS.num_gpus  # Allow user to choose how many GPUs they would like to use for inference
+    args.num_nodes = 1  # Enforce predictions to take place on a single node
     args.precision = args.gpu_precision
     args.accumulate_grad_batches = args.accum_grad_batches
     args.gradient_clip_val = args.grad_clip_val
@@ -222,6 +222,7 @@ def main(argv):
                     max_num_graph_nodes=NODE_COUNT_LIMIT,
                     max_num_residues=RESIDUE_COUNT_LIMIT,
                     testing_with_casp_capri=dict_args['testing_with_casp_capri'],
+                    training_with_db5=dict_args['training_with_db5'],
                     pos_prob_threshold=0.5,
                     gnn_layer_type=dict_args['gnn_layer_type'],
                     num_gnn_layers=dict_args['num_gnn_layers'],
@@ -244,7 +245,9 @@ def main(argv):
                     pad=dict_args['pad'],
                     viz_every_n_epochs=dict_args['viz_every_n_epochs'],
                     use_wandb_logger=False,
-                    weight_classes=args.weight_classes)
+                    weight_classes=args.weight_classes,
+                    fine_tune=False,
+                    ckpt_path=None)
     args.experiment_name = f'LitGINI-b{1}-gl{args.num_gnn_layers}' \
                            f'-n{args.num_gnn_hidden_channels}' \
                            f'-e{args.num_gnn_hidden_channels}' \

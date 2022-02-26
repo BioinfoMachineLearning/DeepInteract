@@ -10,22 +10,23 @@ from project.utils.deepinteract_utils \
     zero_out_complex_features
 
 
-class CASPCAPRIDGLDataset(DGLDataset):
-    r"""Bound protein complex dataset for DGL with PyTorch.
+class DB5DGLDataset(DGLDataset):
+    r"""Unbound protein complex dataset for DGL with PyTorch.
 
     Statistics:
 
-    - Test homodimers: 14
-    - Test heterodimers: 5
+    - Train dimers: 140
+    - Validation dimers: 35
+    - Test dimers: 55
     - Number of structures per complex: 2
     ----------------------
-    - Total dimers: 19
+    - Total dimers: 230
     ----------------------
 
     Parameters
     ----------
     mode: str, optional
-        Should be one of ['test']. Default: 'test'.
+        Should be one of ['train', 'val', 'test']. Default: 'test'.
     raw_dir: str
         Raw file directory to download/contains the input data directory. Default: 'final/raw'.
     knn: int
@@ -52,10 +53,12 @@ class CASPCAPRIDGLDataset(DGLDataset):
     Examples
     --------
     >>> # Get dataset
-    >>> test_data = CASPCAPRIDGLDataset(mode='test')
+    >>> train_data = DB5DGLDataset(mode='train')
+    >>> val_data = DB5DGLDataset(mode='val')
+    >>> test_data = DB5DGLDataset()
     >>>
     >>> len(test_data)
-    19
+    55
     >>> test_data.num_chains
     2
     """
@@ -71,14 +74,14 @@ class CASPCAPRIDGLDataset(DGLDataset):
                  input_indep=False,
                  force_reload=False,
                  verbose=False):
-        assert mode in ['test']
+        assert mode in ['train', 'val', 'test']
         assert 0.0 < percent_to_use <= 1.0
         self.mode = mode
         self.root = raw_dir
         self.knn = knn
         self.geo_nbrhd_size = geo_nbrhd_size
         self.self_loops = self_loops
-        self.percent_to_use = percent_to_use  # How much of the dataset (e.g. CASP-CAPRI training dataset) to use
+        self.percent_to_use = percent_to_use  # How much of the dataset (e.g. DB5 test dataset) to use
         self.process_complexes = process_complexes  # Whether to process any unprocessed complexes before training
         self.input_indep = input_indep  # Whether to use an input-independent pipeline to train the model
         self.final_dir = os.path.join(*self.root.split(os.sep)[:-1])
@@ -88,7 +91,7 @@ class CASPCAPRIDGLDataset(DGLDataset):
         self.base_txt_filename, self.filenames_frame_txt_filename, self.filenames_frame_txt_filepath = \
             construct_filenames_frame_txt_filenames(self.mode, self.percent_to_use, self.filename_sampling, self.root)
 
-        # Try to load the text file containing all CASP-CAPRI filenames, and alert the user if it is missing
+        # Try to load the text file containing all DB5 filenames, and alert the user if it is missing
         filenames_frame_to_be_written = not os.path.exists(self.filenames_frame_txt_filepath)
 
         # Randomly sample DataFrame of filenames with requested cross validation ratio
@@ -99,13 +102,13 @@ class CASPCAPRIDGLDataset(DGLDataset):
                         os.path.join(self.root, self.base_txt_filename + '.txt'), header=None)
                 except Exception:
                     raise FileNotFoundError(
-                        build_filenames_frame_error_message('CASP-CAPRI', 'load', self.filenames_frame_txt_filepath))
+                        build_filenames_frame_error_message('DB5', 'load', self.filenames_frame_txt_filepath))
                 self.filenames_frame = self.filenames_frame.sample(frac=self.percent_to_use).reset_index()
                 try:
                     self.filenames_frame[0].to_csv(self.filenames_frame_txt_filepath, header=None, index=None)
                 except Exception:
                     raise Exception(
-                        build_filenames_frame_error_message('CASP-CAPRI', 'write', self.filenames_frame_txt_filepath))
+                        build_filenames_frame_error_message('DB5', 'write', self.filenames_frame_txt_filepath))
 
         # Load in existing DataFrame of filenames as requested (or if a sampled DataFrame .txt has already been written)
         if not filenames_frame_to_be_written:
@@ -113,18 +116,18 @@ class CASPCAPRIDGLDataset(DGLDataset):
                 self.filenames_frame = pd.read_csv(self.filenames_frame_txt_filepath, header=None)
             except Exception:
                 raise FileNotFoundError(
-                    build_filenames_frame_error_message('CASP-CAPRI', 'load', self.filenames_frame_txt_filepath))
+                    build_filenames_frame_error_message('DB5', 'load', self.filenames_frame_txt_filepath))
 
-        super(CASPCAPRIDGLDataset, self).__init__(name='CASP-CAPRI-Plus',
-                                                  raw_dir=raw_dir,
-                                                  force_reload=force_reload,
-                                                  verbose=verbose)
-        logging.info(f"Loaded CASP-CAPRI-Plus {mode}-set, source: {self.processed_dir}, length: {len(self)}")
+        super(DB5DGLDataset, self).__init__(name='DB5-Plus',
+                                            raw_dir=raw_dir,
+                                            force_reload=force_reload,
+                                            verbose=verbose)
+        print(f"Loaded DB5-Plus {mode}-set, source: {self.processed_dir}, length: {len(self)}")
 
     def download(self):
         """Download and extract a pre-packaged version of the raw pairs if 'self.raw_dir' is not already populated."""
         # Path to store the file
-        gz_file_path = os.path.join(os.path.join(*self.raw_dir.split(os.sep)[:-1]), 'final_raw_casp_capri.tar.gz')
+        gz_file_path = os.path.join(os.path.join(*self.raw_dir.split(os.sep)[:-1]), 'final_raw_db5.tar.gz')
 
         # Download file
         download(self.url, path=gz_file_path)
@@ -158,22 +161,22 @@ class CASPCAPRIDGLDataset(DGLDataset):
                                               self.geo_nbrhd_size, self.self_loops, check_sequence=False)
 
     def has_cache(self):
-        """Check if each complex is downloaded and available for testing."""
+        """Check if each complex is downloaded and available for training, validation, or testing."""
         for (i, raw_path) in self.filenames_frame.iterrows():
             processed_filepath = os.path.join(self.processed_dir, f'{os.path.splitext(raw_path[0])[0]}.dill')
             if not os.path.exists(processed_filepath):
                 logging.info(
-                    f'Unable to load at least one processed CASP-CAPRI pair. '
+                    f'Unable to load at least one processed DB5 pair. '
                     f'Please make sure all processed pairs have been successfully downloaded and are not corrupted.')
                 raise FileNotFoundError
-        logging.info('CASP-CAPRI cache found')  # Otherwise, a cache was found!
+        logging.info('DB5 cache found')  # Otherwise, a cache was found!
 
     def __getitem__(self, idx):
         r""" Get feature dictionary by index of complex.
 
         Parameters
         ----------
-        idx: int
+        idx : int
 
         Returns
         -------
@@ -251,4 +254,4 @@ class CASPCAPRIDGLDataset(DGLDataset):
     @property
     def url(self) -> str:
         """URL with which to download TAR archive of preprocessed pairs."""
-        return 'https://zenodo.org/record/5546775/files/final_processed_casp_capri.tar.gz'
+        return 'https://zenodo.org/record/5546775/files/final_raw_db5.tar.gz?download=1'

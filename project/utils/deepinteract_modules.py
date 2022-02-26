@@ -1480,12 +1480,13 @@ class LitGINI(pl.LightningModule):
 
     def __init__(self, num_node_input_feats: int, num_edge_input_feats: int, gnn_activ_fn=nn.SiLU(),
                  num_classes=2, max_num_graph_nodes=NODE_COUNT_LIMIT, max_num_residues=RESIDUE_COUNT_LIMIT,
-                 testing_with_casp_capri=False, pos_prob_threshold=0.5, gnn_layer_type='geotran', num_gnn_layers=2,
-                 num_gnn_hidden_channels=128, num_gnn_attention_heads=4, knn=20, interact_module_type='dil_resnet',
-                 num_interact_layers=14, num_interact_hidden_channels=128, use_interact_attention=False,
-                 num_interact_attention_heads=4, disable_geometric_mode=False, num_epochs=50, pn_ratio=0.1,
-                 dropout_rate=0.2, metric_to_track='val_ce', weight_decay=1e-2, batch_size=1, lr=1e-3, pad=False,
-                 viz_every_n_epochs=1, use_wandb_logger=True, weight_classes=False):
+                 testing_with_casp_capri=False, training_with_db5=False, pos_prob_threshold=0.5,
+                 gnn_layer_type='geotran', num_gnn_layers=2, num_gnn_hidden_channels=128,
+                 num_gnn_attention_heads=4, knn=20, interact_module_type='dil_resnet', num_interact_layers=14,
+                 num_interact_hidden_channels=128, use_interact_attention=False, num_interact_attention_heads=4,
+                 disable_geometric_mode=False, num_epochs=50, pn_ratio=0.1, dropout_rate=0.2, metric_to_track='val_ce',
+                 weight_decay=1e-2, batch_size=1, lr=1e-3, pad=False, viz_every_n_epochs=1, use_wandb_logger=True,
+                 weight_classes=False, fine_tune=False, ckpt_path=None):
         """Initialize all the parameters for a LitGINI module."""
         super().__init__()
 
@@ -1497,6 +1498,7 @@ class LitGINI(pl.LightningModule):
         self.max_num_graph_nodes = max_num_graph_nodes
         self.max_num_residues = max_num_residues
         self.testing_with_casp_capri = testing_with_casp_capri
+        self.training_with_db5 = training_with_db5
         self.pos_prob_threshold = pos_prob_threshold
 
         # GNN module's keyword arguments provided via the command line
@@ -1530,6 +1532,8 @@ class LitGINI(pl.LightningModule):
         self.viz_every_n_epochs = viz_every_n_epochs  # Visualize model predictions every 'n' epochs
         self.use_wandb_logger = use_wandb_logger  # Whether to use WandB as the primary means of logging
         self.weight_classes = weight_classes  # Whether to use class weighting in our training Cross Entropy
+        self.fine_tune = fine_tune  # Whether to fine-tune a trained LitGINI on a new dataset
+        self.ckpt_path = ckpt_path  # A path to a trained LitGINI checkpoint given if fine-tuning
 
         # Set up GNN node and edge embedding layers (if requested)
         self.using_gcn = self.gnn_layer_type.lower() == 'gcn'
@@ -1539,7 +1543,20 @@ class LitGINI(pl.LightningModule):
             else nn.Identity()
 
         # Assemble the layers of the network
-        self.build_gnn_module(), self.build_interaction_module()
+        if self.fine_tune:
+            # Load in trained LitGINI
+            lit_gini = LitGINI.load_from_checkpoint(self.ckpt_path,
+                                                    use_wandb_logger=use_wandb_logger,
+                                                    batch_size=self.batch_size,
+                                                    lr=self.lr,
+                                                    weight_decay=self.weight_decay,
+                                                    dropout_rate=self.dropout_rate)
+            self.gnn_module, self.interact_module = lit_gini.gnn_module, lit_gini.interact_module
+            # Freeze the interaction module during fine-tuning
+            for param in self.interact_module.parameters():
+                param.requires_grad = False
+        else:
+            self.build_gnn_module(), self.build_interaction_module()
 
         # Declare loss functions and metrics for training, validation, and testing
         self.loss_fn = nn.CrossEntropyLoss()
@@ -1667,7 +1684,7 @@ class LitGINI(pl.LightningModule):
         logits = self.interact_module(interact_tensor)
         return logits
 
-    def shared_step(self, graph1: dgl.DGLGraph, graph2: dgl.DGLGraph):
+    def shared_step(self, graph1: dgl.DGLGraph, graph2: dgl.DGLGraph, return_representations=False):
         """Make a forward pass through the entire siamese network."""
         # Learn structural features for each structure's nodes
         graph1_node_feats = self.gnn_forward(graph1)
@@ -1719,10 +1736,13 @@ class LitGINI(pl.LightningModule):
                 # TODO: Implement subsequence batching of graph batches
                 raise NotImplementedError
 
-        # Return network prediction and learned node and edge representations for both graphs
-        g1_nf, g1_ef = graph1.ndata['f'].detach().cpu().numpy(), graph1.edata['f'].detach().cpu().numpy()
-        g2_nf, g2_ef = graph2.ndata['f'].detach().cpu().numpy(), graph2.edata['f'].detach().cpu().numpy()
-        return logits_list, g1_nf, g1_ef, g2_nf, g2_ef
+        if return_representations:
+            # Return network prediction and learned node and edge representations for both graphs
+            g1_nf, g1_ef = graph1.ndata['f'].detach().cpu().numpy(), graph1.edata['f'].detach().cpu().numpy()
+            g2_nf, g2_ef = graph2.ndata['f'].detach().cpu().numpy(), graph2.edata['f'].detach().cpu().numpy()
+            return logits_list, g1_nf, g1_ef, g2_nf, g2_ef
+        else:
+            return logits_list
 
     def downsample_examples(self, examples: torch.tensor):
         """Randomly sample enough negative pairs to achieve requested positive-negative class ratio (via shuffling)."""
@@ -1744,7 +1764,7 @@ class LitGINI(pl.LightningModule):
         examples_list, filepaths = [train_batch['examples']], [train_batch['filepath']]
 
         # Forward propagate with network layers
-        logits_list, _, _, _, _ = self.shared_step(graph1, graph2)  # The forward method must be named something new
+        logits_list = self.shared_step(graph1, graph2)  # The forward method must be named something new
 
         # Collect flattened sampled logits and their corresponding labels
         sampled_examples = []
@@ -1817,7 +1837,7 @@ class LitGINI(pl.LightningModule):
                 val_examples_list = val_batch['examples']
 
                 # Forward propagate with network layers without accumulating any gradients
-                val_logits_list, _, _, _, _ = self.shared_step(val_graph1, val_graph2)
+                val_logits_list = self.shared_step(val_graph1, val_graph2)
                 val_logits = val_logits_list[0].squeeze()
                 val_len_1, val_len_2 = val_logits.shape[1:]
 
@@ -1904,7 +1924,7 @@ class LitGINI(pl.LightningModule):
         examples_list, filepaths = [batch['examples']], [batch['filepath']]
 
         # Forward propagate with network layers
-        logits_list, _, _, _, _ = self.shared_step(graph1, graph2)
+        logits_list = self.shared_step(graph1, graph2)
 
         # Collect flattened, sampled logits and their corresponding labels
         sampled_logits = torch.tensor([], device=self.device)
@@ -2009,7 +2029,7 @@ class LitGINI(pl.LightningModule):
         examples_list, filepaths = [batch['examples']], [batch['filepath']]
 
         # Forward propagate with network layers
-        logits_list, _, _, _, _ = self.shared_step(graph1, graph2)
+        logits_list = self.shared_step(graph1, graph2)
 
         # Collect flattened, sampled logits and their corresponding labels
         sampled_logits = torch.tensor([], device=self.device)
@@ -2126,11 +2146,13 @@ class LitGINI(pl.LightningModule):
             'target': [extract_object(output_dict['target']) for output_dict in outputs],
         }
         metrics_df = pd.DataFrame(data=metrics_data)
-        metrics_df_name_prefix = 'casp_capri' if self.testing_with_casp_capri else 'dips_plus_test'
+        metrics_df_name_prefix = 'dips_plus_test'
+        metrics_df_name_prefix = 'casp_capri' if self.testing_with_casp_capri else metrics_df_name_prefix
+        metrics_df_name_prefix = 'db5_plus_test' if self.training_with_db5 else metrics_df_name_prefix
         metrics_df_name = metrics_df_name_prefix + '_top_metrics.csv'
         metrics_df.to_csv(metrics_df_name)
 
-        if not self.testing_with_casp_capri:  # Testing with DIPS-Plus
+        if not self.testing_with_casp_capri:  # Testing with either DIPS-Plus or DB5-Plus
             # Filter out all but the first 55 test predictions and labels to reduce storage requirements
             test_preds, test_preds_rounded, test_labels = test_preds[:55], test_preds_rounded[:55], test_labels[:55]
 
@@ -2166,7 +2188,7 @@ class LitGINI(pl.LightningModule):
         # Make predictions for a batch of protein complexes
         graph1, graph2 = batch[0], batch[1]
         # Forward propagate with network layers - (batch_size x self.num_channels x len(graph1) x len(graph2))
-        logits_list, g1_nf, g1_ef, g2_nf, g2_ef = self.shared_step(graph1, graph2)
+        logits_list, g1_nf, g1_ef, g2_nf, g2_ef = self.shared_step(graph1, graph2, return_representations=True)
         return logits_list, g1_nf, g1_ef, g2_nf, g2_ef
 
     # ---------------------
@@ -2213,6 +2235,8 @@ class LitGINI(pl.LightningModule):
                             help='By how many epochs to space out model prediction visualizations during training')
         parser.add_argument('--weight_classes', action='store_true', dest='weight_classes',
                             help='Whether to use class weighting in our training Cross Entropy')
+        parser.add_argument('--fine_tune', action='store_true', dest='fine_tune',
+                            help='Whether to fine-tune a trained LitGINI on a new dataset')
         parser.add_argument('--left_pdb_filepath', type=str, default='test_data/4heq_l.pdb',
                             help='A filepath to the left input PDB chain')
         parser.add_argument('--right_pdb_filepath', type=str, default='test_data/4heq_r.pdb',

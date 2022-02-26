@@ -1007,6 +1007,9 @@ def collect_args():
     parser.add_argument('--knn', type=int, default=20, help='Number of nearest neighbor edges for each node')
     parser.add_argument('--self_loops', action='store_true', dest='self_loops', help='Allow node self-loops')
     parser.add_argument('--no_self_loops', action='store_false', dest='self_loops', help='Disable self-loops')
+    parser.add_argument('--db5_percent_to_use', type=float, default=1.0, help='Fraction of DB5-Plus dataset to use')
+    parser.add_argument('--training_with_db5', action='store_true', dest='training_with_db5', help='Train on DB5-Plus')
+    parser.add_argument('--db5_data_dir', type=str, default='datasets/DB5/final/raw', help='Path to DB5-Plus')
     parser.add_argument('--pn_ratio', type=float, default=0.1,
                         help='Positive-negative class ratio to instate during training with DIPS-Plus')
     parser.add_argument('--dips_percent_to_use', type=float, default=1.00,

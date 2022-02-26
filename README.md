@@ -21,13 +21,12 @@ A geometric deep learning pipeline for predicting protein interface contacts.
 If you use the code or data associated with this package, please cite:
 
 ```bibtex
-@article{morehead2021deepinteract,
-  title = {Geometric Transformers for Protein Interface Contact Prediction},
-  author = {Alex Morehead, Chen Chen, and Jianlin Cheng},
-  year = {2021},
-  eprint = {N/A},
-  archivePrefix = {arXiv},
-  primaryClass = {cs.LG}
+@inproceedings{morehead2022geometric,
+  title={Geometric Transformers for Protein Interface Contact Prediction},
+  author={Alex Morehead and Chen Chen and Jianlin Cheng},
+  booktitle={International Conference on Learning Representations},
+  year={2022},
+  url={https://openreview.net/forum?id=CS4463zx6Hi}
 }
 ```
 
@@ -125,6 +124,17 @@ DeepInteract
      └───datasets
      │   │
      │   └───builder
+     │   │
+     │   └───DB5
+     │   │   │
+     │   │   └───final
+     │   │   │   │
+     │   │   │   └───processed
+     │   │   │   │
+     │   │   │   └───raw
+     │   │   │
+     │   │   db5_dgl_data_module.py
+     │   │   db5_dgl_dataset.py
      │   │
      │   └───CASP_CAPRI
      │   │   │

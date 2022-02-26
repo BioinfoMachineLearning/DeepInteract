@@ -19,13 +19,19 @@ from project.utils.deepinteract_utils import collect_args, process_args, constru
 
 def main(args):
     # -----------
+    # Test Args
+    # -----------
+    test_batch_size = 1  # Enforce batch_size=1 when testing on the large complexes in DB5-Plus
+    self_loops = True  # Enforce self-loops in graphs to be expected
+
+    # -----------
     # Data
     # -----------
     # Load protein interface contact prediction (PICP) data module
     picp_data_module = PICPDGLDataModule(casp_capri_data_dir=args.casp_capri_data_dir,
                                          db5_data_dir=args.db5_data_dir,
                                          dips_data_dir=args.dips_data_dir,
-                                         batch_size=args.batch_size,
+                                         batch_size=test_batch_size,
                                          num_dataloader_workers=args.num_workers,
                                          knn=args.knn,
                                          self_loops=args.self_loops,
@@ -38,13 +44,6 @@ def main(args):
                                          process_complexes=args.process_complexes,
                                          input_indep=args.input_indep)
     picp_data_module.setup()
-
-    # ------------
-    # Fine-Tuning
-    # ------------
-    ckpt_path = os.path.join(args.ckpt_dir, args.ckpt_name)
-    ckpt_path_exists = os.path.exists(ckpt_path)
-    ckpt_provided = args.ckpt_name != '' and ckpt_path_exists
 
     # ------------
     # Model
@@ -80,15 +79,15 @@ def main(args):
                     dropout_rate=dict_args['dropout_rate'],
                     metric_to_track=dict_args['metric_to_track'],
                     weight_decay=dict_args['weight_decay'],
-                    batch_size=dict_args['batch_size'],
+                    batch_size=test_batch_size,
                     lr=dict_args['lr'],
                     pad=dict_args['pad'],
                     viz_every_n_epochs=dict_args['viz_every_n_epochs'],
                     use_wandb_logger=use_wandb_logger,
                     weight_classes=dict_args['weight_classes'],
-                    fine_tune=dict_args['fine_tune'],
-                    ckpt_path=ckpt_path)
-    args.experiment_name = f'LitGINI-b{args.batch_size}-gl{args.num_gnn_layers}' \
+                    fine_tune=False,
+                    ckpt_path=None)
+    args.experiment_name = f'LitGINI-b{test_batch_size}-gl{args.num_gnn_layers}' \
                            f'-n{args.num_gnn_hidden_channels}' \
                            f'-e{args.num_gnn_hidden_channels}' \
                            f'-il{args.num_interact_layers}-i{args.num_interact_hidden_channels}' \
@@ -100,58 +99,20 @@ def main(args):
     # ------------
     # Checkpoint
     # ------------
-    if not args.fine_tune:
-        model = model.load_from_checkpoint(ckpt_path,
-                                           use_wandb_logger=use_wandb_logger,
-                                           batch_size=args.batch_size,
-                                           lr=args.lr,
-                                           weight_decay=args.weight_decay,
-                                           dropout_rate=args.dropout_rate) if ckpt_provided else model
+    ckpt_path = os.path.join(args.ckpt_dir, args.ckpt_name)
+    ckpt_provided = args.ckpt_name != ''
+    assert ckpt_provided, 'A checkpoint filename must be provided'
 
     # ------------
     # Trainer
     # ------------
     trainer = pl.Trainer.from_argparse_args(args)
 
-    # -------------
-    # Learning Rate
-    # -------------
-    if args.find_lr:
-        lr_finder = trainer.tuner.lr_find(model, datamodule=picp_data_module)  # Run learning rate finder
-        fig = lr_finder.plot(suggest=True)  # Plot learning rates
-        fig.savefig('optimal_lr.pdf')
-        fig.show()
-        model.hparams.lr = lr_finder.suggestion()  # Save optimal learning rate
-        logging.info(f'Optimal learning rate found: {model.hparams.lr}')
-
     # ------------
     # Logger
     # ------------
     pl_logger = construct_pl_logger(args)  # Log everything to an external logger
     trainer.logger = pl_logger  # Assign specified logger (e.g. TensorBoardLogger) to Trainer instance
-
-    # -----------
-    # Callbacks
-    # -----------
-    # Create and use callbacks
-    mode = 'min' if 'ce' in args.metric_to_track else 'max'
-    early_stop_callback = pl.callbacks.EarlyStopping(monitor=args.metric_to_track,
-                                                     mode=mode,
-                                                     min_delta=args.min_delta,
-                                                     patience=args.patience)
-    ckpt_callback = pl.callbacks.ModelCheckpoint(
-        monitor=args.metric_to_track,
-        mode=mode,
-        verbose=True,
-        save_last=True,
-        save_top_k=3,
-        filename=template_ckpt_filename  # Warning: May cause a race condition if calling trainer.test() with many GPUs
-    )
-    lr_monitor_callback = pl.callbacks.LearningRateMonitor(logging_interval='step', log_momentum=True)
-    callbacks = [early_stop_callback, ckpt_callback]
-    if args.fine_tune:
-        callbacks.append(lr_monitor_callback)
-    trainer.callbacks = callbacks
 
     # ------------
     # Restore
@@ -163,20 +124,24 @@ def main(args):
         artifact_dir = artifact.download()
         model = model.load_from_checkpoint(Path(artifact_dir) / 'model.ckpt',
                                            use_wandb_logger=use_wandb_logger,
-                                           batch_size=args.batch_size,
+                                           batch_size=test_batch_size,
                                            lr=args.lr,
-                                           weight_decay=args.weight_decay)
-
-    # -------------
-    # Training
-    # -------------
-    # Train with the provided model and DataModule
-    trainer.fit(model=model, datamodule=picp_data_module)
+                                           weight_decay=args.weight_decay,
+                                           dropout_rate=args.dropout_rate)
+    else:
+        assert ckpt_provided and os.path.exists(ckpt_path), 'A valid checkpoint filepath must be provided'
+        model = model.load_from_checkpoint(ckpt_path,
+                                           use_wandb_logger=use_wandb_logger,
+                                           batch_size=test_batch_size,
+                                           lr=args.lr,
+                                           weight_decay=args.weight_decay,
+                                           dropout_rate=args.dropout_rate)
 
     # -------------
     # Testing
     # -------------
-    trainer.test()
+    # Test the trained model with the provided data module
+    trainer.test(model=model, datamodule=picp_data_module)
 
 
 if __name__ == '__main__':
@@ -199,22 +164,15 @@ if __name__ == '__main__':
     args.max_time = {'hours': args.max_hours, 'minutes': args.max_minutes}
     args.max_epochs = args.num_epochs
     args.profiler = args.profiler_method
-    args.accelerator = args.multi_gpu_backend
+    args.accelerator = 'dp'  # Test using Data Parallel (DP) and not Distributed Data Parallel (DDP) to avoid PT error
     args.auto_select_gpus = args.auto_choose_gpus
-    args.gpus = args.num_gpus
-    args.num_nodes = args.num_compute_nodes
+    args.gpus = 1  # Enforce testing to take place on a single GPU
+    args.num_nodes = 1  # Enforce testing to take place on a single node
     args.precision = args.gpu_precision
     args.accumulate_grad_batches = args.accum_grad_batches
     args.gradient_clip_val = args.grad_clip_val
     args.gradient_clip_algo = args.grad_clip_algo
     args.stochastic_weight_avg = args.stc_weight_avg
-    args.deterministic = True  # Make LightningModule's training reproducible
-
-    # Set plugins for Lightning
-    args.plugins = [
-        # 'ddp_sharded',  # For sharded model training (to reduce GPU requirements)
-        DDPPlugin(find_unused_parameters=False)
-    ]
 
     # Finalize all arguments as necessary
     args = process_args(args)
