@@ -1,6 +1,6 @@
 <div align="center">
 
-# DeepInteract (ICLR 2022)
+# Source code for Geometric Transformers for Protein Interface Contact Prediction (ICLR 2022)
 
 [![Paper](http://img.shields.io/badge/paper-arxiv.2110.02423-B31B1B.svg)](https://openreview.net/forum?id=CS4463zx6Hi) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6299835.svg)](https://doi.org/10.5281/zenodo.6299835)
 
