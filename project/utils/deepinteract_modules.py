@@ -1758,10 +1758,8 @@ class LitGINI(pl.LightningModule):
         # Separate training batch from validation batch (with the latter being used for visualizations)
         train_batch, val_batch = batch['train_batch'], batch['val_batch']
 
-        # Unpack list of input training complexes - Assume batch_size=1
-        train_batch = train_batch[0]
-        graph1, graph2 = train_batch['graph1'], train_batch['graph2']
-        examples_list, filepaths = [train_batch['examples']], [train_batch['filepath']]
+        # Make a forward pass through the network for a singular training batch of protein complexes
+        graph1, graph2, examples_list, filepaths = train_batch[0], train_batch[1], train_batch[2], train_batch[3]
 
         # Forward propagate with network layers
         logits_list = self.shared_step(graph1, graph2)  # The forward method must be named something new
@@ -1832,9 +1830,7 @@ class LitGINI(pl.LightningModule):
                 # Val Sample
                 # ------------
                 # Make a forward pass through the network for a held-out validation complex for visualization
-                val_batch = val_batch[0]  # Unpack list of input validation complexes - Assume batch_size=1
-                val_graph1, val_graph2 = val_batch['graph1'], val_batch['graph2']
-                val_examples_list = val_batch['examples']
+                val_graph1, val_graph2, val_examples_list = val_batch[0], val_batch[1], val_batch[2]
 
                 # Forward propagate with network layers without accumulating any gradients
                 val_logits_list = self.shared_step(val_graph1, val_graph2)
@@ -1918,10 +1914,8 @@ class LitGINI(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         """Lightning calls this inside the validation loop."""
-        # Make a forward pass through the network for a batch of protein complexes
-        batch = batch[0]  # Unpack list of input complexes - Assume batch_size=1
-        graph1, graph2 = batch['graph1'], batch['graph2']
-        examples_list, filepaths = [batch['examples']], [batch['filepath']]
+        # Make a forward pass through the network for a singular validation batch of protein complexes
+        graph1, graph2, examples_list, filepaths = batch[0], batch[1], batch[2], batch[3]
 
         # Forward propagate with network layers
         logits_list = self.shared_step(graph1, graph2)
@@ -2023,10 +2017,8 @@ class LitGINI(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         """Lightning calls this inside the testing loop."""
-        # Make a forward pass through the network for a batch of protein complexes
-        batch = batch[0]  # Unpack list of input complexes - Assume batch_size=1
-        graph1, graph2 = batch['graph1'], batch['graph2']
-        examples_list, filepaths = [batch['examples']], [batch['filepath']]
+        # Make a forward pass through the network for a singular test batch of protein complexes
+        graph1, graph2, examples_list, filepaths = batch[0], batch[1], batch[2], batch[3]
 
         # Forward propagate with network layers
         logits_list = self.shared_step(graph1, graph2)
